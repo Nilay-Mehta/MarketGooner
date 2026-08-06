@@ -1,0 +1,19 @@
+# Environment variables
+.env
+.env.local
+*.env
+
+# SQLite Databases
+data/intel.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+
+# Output scratch
+output/

@@ -1,0 +1,222 @@
+{
+  "main": {
+    "id": "51fe3db838b7ed8e",
+    "type": "split",
+    "children": [
+      {
+        "id": "fc1d17496ebd617c",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "639ac3dbd7e2a867",
+            "type": "leaf",
+            "state": {
+              "type": "markdown",
+              "state": {
+                "file": "Market_Intelligence_Vault/00_Master_Dashboard.md",
+                "mode": "source",
+                "source": false
+              },
+              "icon": "lucide-file",
+              "title": "00_Master_Dashboard"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "b7ba8a43deef9a08",
+    "type": "split",
+    "children": [
+      {
+        "id": "efd3b605485fdb34",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "b277badf3ce2cada",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "e1b70e8d02f8f999",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "26aba2c53c2b5b98",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {},
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "3e9b24c337814449",
+    "type": "split",
+    "children": [
+      {
+        "id": "13ee26c700c86e7d",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "4a06efc28d4e75f5",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "file": "Market_Intelligence_Vault/03_Gold_Mining_Framework.md",
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks for 03_Gold_Mining_Framework"
+            }
+          },
+          {
+            "id": "0f0d6c9566424460",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "file": "Market_Intelligence_Vault/03_Gold_Mining_Framework.md",
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links from 03_Gold_Mining_Framework"
+            }
+          },
+          {
+            "id": "3170a2ebba060fe4",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "8cb606c1e77a91a8",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "d0a23d73fde141f9",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "file": "Market_Intelligence_Vault/03_Gold_Mining_Framework.md",
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline of 03_Gold_Mining_Framework"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "639ac3dbd7e2a867",
+  "lastOpenFiles": [
+    "Market_Intelligence_Vault/02_Architecture_and_APIs/13_Zero_Cost_Cloud_and_OpenSource_Blueprint.md",
+    "Market_Intelligence_Vault/05_Tools_and_Repositories/12_Ecosystem_Skills_and_Adjacent_OpenSource_Projects.md",
+    "Market_Intelligence_Vault/05_Tools_and_Repositories/11_Curated_GitHub_Repositories_Analysis.md",
+    "Market_Intelligence_Vault/05_Tools_and_Repositories/09_Third_Party_Free_APIs_and_Tooling.md",
+    "Market_Intelligence_Vault/05_Tools_and_Repositories/06_Market_Research_Toolstack.md",
+    "Market_Intelligence_Vault/04_Validation_and_GTM/05_Validation_Strategy.md",
+    "Market_Intelligence_Vault/03_Research_and_Playbooks/10_End_to_End_Execution_Playbook.md",
+    "Market_Intelligence_Vault/03_Research_and_Playbooks/04_Reddit_Teleportation.md",
+    "Market_Intelligence_Vault/03_Research_and_Playbooks/03_Gold_Mining_Framework.md",
+    "Market_Intelligence_Vault/02_Architecture_and_APIs/08_SubAgent_Architecture_and_Task_Routing.md",
+    "Market_Intelligence_Vault/02_Architecture_and_APIs/07_Free_API_Resources_and_Rotation.md",
+    "Market_Intelligence_Vault/02_Architecture_and_APIs/02_Opencode_Architecture.md",
+    "Market_Intelligence_Vault/01_Foundations/01_Startup_Philosophy.md",
+    "Market_Intelligence_Vault/00_Master_Dashboard.md",
+    "Market_Intelligence_Vault/05_Tools_and_Repositories",
+    "Market_Intelligence_Vault/04_Validation_and_GTM",
+    "Market_Intelligence_Vault/03_Research_and_Playbooks",
+    "Market_Intelligence_Vault/02_Architecture_and_APIs",
+    "Market_Intelligence_Vault/01_Foundations",
+    "Market_Intelligence_Vault/06_Market_Research_Toolstack.md",
+    "Market_Intelligence_Vault/12_Ecosystem_Skills_and_Adjacent_OpenSource_Projects.md",
+    "Market_Intelligence_Vault/11_Curated_GitHub_Repositories_Analysis.md",
+    "Market_Intelligence_Vault/10_End_to_End_Execution_Playbook.md",
+    "Market_Intelligence_Vault/09_Third_Party_Free_APIs_and_Tooling.md",
+    "Market_Intelligence_Vault/08_SubAgent_Architecture_and_Task_Routing.md",
+    "Market_Intelligence_Vault/07_Free_API_Resources_and_Rotation.md",
+    "Market_Intelligence_Vault/05_Validation_Strategy.md",
+    "Market_Intelligence_Vault/05_Immediate_Action_Plan.md",
+    "Market_Intelligence_Vault/04_Validation_Strategy.md",
+    "Market_Intelligence_Vault/04_Reddit_Teleportation.md",
+    "Untitled.base",
+    "Market_Intelligence_Vault/03_Gold_Mining_Framework.md",
+    "opencode.json"
+  ]
+}

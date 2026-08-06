@@ -1,0 +1,69 @@
+{
+  "title": "Market Intelligence & B2B SaaS Gap Engine",
+  "description": "Auditable market research database tracking raw discussions, extracted pain points, clusters, and validated ideas.",
+  "databases": {
+    "intel": {
+      "tables": {
+        "raw_items": {
+          "description": "Scraped raw discussions from Reddit, Hacker News, StackOverflow, GitHub, Shopify Reviews, AlternativeTo, and YouTube.",
+          "columns": {
+            "source": "Platform and identifier (e.g. reddit:r/devops, shopify:recharge, youtube:indiehackers)",
+            "url": "Direct URL or timestamp deep link to original post",
+            "score": "Upvotes, stars, or likes on source platform",
+            "mentioned_incumbent": "Incumbent software explicitly identified in review"
+          }
+        },
+        "pain_points": {
+          "description": "Structured pain points extracted via LLM with verbatim quotes and severity levels.",
+          "foreign_keys": {
+            "foreign_keys": [
+              {
+                "columns": ["raw_item_id"],
+                "other_table": "raw_items",
+                "other_columns": ["id"]
+              },
+              {
+                "columns": ["cluster_id"],
+                "other_table": "clusters",
+                "other_columns": ["id"]
+              }
+            ]
+          }
+        },
+        "clusters": {
+          "description": "Problem clusters formed by BERTopic embedding and HDBSCAN noise rejection.",
+          "columns": {
+            "size": "Number of pain points in cluster",
+            "source_diversity": "Distinct number of data sources backing this cluster",
+            "wtp_evidence_count": "Number of pain points with explicit willingness to pay evidence",
+            "status": "active or unscoreable"
+          }
+        },
+        "ideas": {
+          "description": "Scored B2B SaaS opportunities with per-axis citations, trend validations, and wedges.",
+          "foreign_keys": {
+            "foreign_keys": [
+              {
+                "columns": ["cluster_id"],
+                "other_table": "clusters",
+                "other_columns": ["id"]
+              }
+            ]
+          }
+        }
+      },
+      "queries": {
+        "top_ideas_with_evidence": {
+          "title": "Top Ideas With Audit Evidence",
+          "description": "Joins ideas -> clusters -> pain_points -> raw_items to trace every claim back to raw URLs and quotes.",
+          "sql": "SELECT i.name, i.score_total, i.wedge, i.icp, i.trend_verdict, p.summary AS sample_pain, r.url AS source_url, r.source FROM ideas i JOIN clusters c ON i.cluster_id = c.id JOIN pain_points p ON p.cluster_id = c.id JOIN raw_items r ON p.raw_item_id = r.id ORDER BY i.score_total DESC;"
+        },
+        "pain_frequency_by_source": {
+          "title": "Pain Frequency by Source & Date",
+          "description": "Aggregated pain point frequency across sources over time for Vega chart visualization.",
+          "sql": "SELECT r.source, date(r.created_utc, 'unixepoch') AS scan_date, count(p.id) AS pain_count FROM pain_points p JOIN raw_items r ON p.raw_item_id = r.id GROUP BY r.source, scan_date ORDER BY scan_date DESC;"
+        }
+      }
+    }
+  }
+}

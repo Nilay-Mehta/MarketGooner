@@ -1,0 +1,63 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "username": "founder",
+  "model": "google/gemini-2.5-flash",
+  "small_model": "google/gemini-2.5-flash",
+  "default_agent": "orchestrator",
+  "agent": {
+    "orchestrator": {
+      "mode": "primary",
+      "model": "google/gemini-2.5-flash",
+      "description": "Master market intelligence orchestrator that automatically delegates research phases to specialized sub-agents.",
+      "prompt": "You are the Master Market Research Orchestrator. For any research request, always delegate tasks to your specialized sub-agents: @trend-scout (for macro trends/news), @social-miner (for Reddit/forum complaints), @competitor-auditor (for G2/incumbent flaws), and @gap-architect (for MVP synthesis). After receiving their findings, save the comprehensive dossier to 06_Market_Scans/."
+    },
+    "trend-scout": {
+      "mode": "subagent",
+      "model": "google/gemini-2.5-flash",
+      "description": "Sub-agent for macro trend scouting, Google Trends, Hacker News, and industry tailwinds.",
+      "prompt": "You are the Trend Scout sub-agent. Search Hacker News and tech discussions for emerging trends, growth momentum, and market shifts for the given domain. Return compact high-signal summaries with links."
+    },
+    "social-miner": {
+      "mode": "subagent",
+      "model": "google/gemini-2.5-flash",
+      "description": "Sub-agent for social friction mining across Reddit and developer forums.",
+      "prompt": "You are the Social Miner sub-agent. Mine Reddit subreddits and developer communities for exact customer friction quotes, complaints ('I hate...', 'Alternative to...'), and broken workflows. Extract exact quotes and links."
+    },
+    "competitor-auditor": {
+      "mode": "subagent",
+      "model": "google/gemini-2.5-flash",
+      "description": "Sub-agent for auditing G2 reviews, Product Hunt launches, and competitor weaknesses.",
+      "prompt": "You are the Competitor Auditor sub-agent. Audit 1-star to 3-star reviews of incumbents on G2, Capterra, and GitHub issues to identify fatal flaws, pricing complaints, and unbundling opportunities."
+    },
+    "gap-architect": {
+      "mode": "subagent",
+      "model": "google/gemini-2.5-flash",
+      "description": "Sub-agent for synthesizing market gaps into 2-3 week buildable MVPs and validation plans.",
+      "prompt": "You are the Gap Architect sub-agent. Take verified pain points from sub-agents and synthesize a defensible 2-3 week buildable B2B Micro-SaaS concept, complete with tech stack, unbundling wedge, and $500 Fake Door test plan."
+    }
+  },
+  "mcp": {
+    "market_research": {
+      "type": "local",
+      "command": ["python", "D:/Start/project/mcp_server.py"],
+      "enabled": true
+    },
+    "playwright": {
+      "type": "local",
+      "command": ["npx", "-y", "@playwright/mcp"],
+      "enabled": true
+    }
+  },
+  "skills": {
+    "paths": [".opencode/skills"]
+  },
+  "permission": {
+    "edit": "allow",
+    "bash": {
+      "python *": "allow",
+      "git *": "allow",
+      "*": "ask"
+    }
+  },
+  "logLevel": "INFO"
+}

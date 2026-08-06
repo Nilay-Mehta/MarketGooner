@@ -1,0 +1,1011 @@
+<!-- Same file as saved in Kaku -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebhookGuard | The 60-Second Webhook Firewall & Dead-Letter Queue</title>
+    <meta name="description" content="Never lose a Stripe, Shopify, or GitHub webhook again. Zero-config dead-letter queue, automated retry engine, and local testing tunnel.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #090d16;
+            --bg-card: rgba(16, 24, 40, 0.75);
+            --bg-card-hover: rgba(22, 34, 56, 0.9);
+            --border-subtle: rgba(255, 255, 255, 0.08);
+            --border-glow: rgba(16, 185, 129, 0.4);
+            --accent-emerald: #10b981;
+            --accent-emerald-glow: rgba(16, 185, 129, 0.15);
+            --accent-indigo: #6366f1;
+            --accent-purple: #a855f7;
+            --accent-red: #ef4444;
+            --accent-amber: #f59e0b;
+            --text-primary: #f8fafc;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --radius-lg: 16px;
+            --radius-md: 10px;
+            --radius-sm: 6px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-base);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        .cyber-grid {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-image: 
+                linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 40px 40px;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        .glow-orb {
+            position: absolute;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            filter: blur(140px);
+            pointer-events: none;
+            opacity: 0.25;
+            z-index: 0;
+        }
+        .glow-1 { top: -200px; left: 20%; background: radial-gradient(circle, var(--accent-emerald), transparent 70%); }
+        .glow-2 { top: 400px; right: -100px; background: radial-gradient(circle, var(--accent-indigo), transparent 70%); }
+
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 24px;
+            position: relative;
+            z-index: 1;
+        }
+
+        nav {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 24px 0;
+            border-bottom: 1px solid var(--border-subtle);
+            backdrop-filter: blur(12px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 1.25rem;
+            color: #fff;
+            text-decoration: none;
+        }
+        .logo-icon {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, var(--accent-emerald), var(--accent-indigo));
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.4);
+        }
+        .nav-links {
+            display: flex;
+            gap: 28px;
+            align-items: center;
+        }
+        .nav-links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 500;
+            transition: color 0.2s;
+        }
+        .nav-links a:hover {
+            color: #fff;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #10b981, #059669);
+            color: #fff;
+            padding: 10px 22px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 20px rgba(16, 185, 129, 0.3);
+            transition: all 0.2s;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 28px rgba(16, 185, 129, 0.45);
+        }
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-primary);
+            padding: 10px 20px;
+            border-radius: var(--radius-sm);
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            border: 1px solid var(--border-subtle);
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+
+        .hero {
+            padding: 80px 0 60px;
+            text-align: center;
+        }
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(16, 185, 129, 0.1);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+            color: #34d399;
+            padding: 6px 16px;
+            border-radius: 9999px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 24px;
+        }
+        .pulse-dot {
+            width: 8px;
+            height: 8px;
+            background: #10b981;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #10b981;
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.95); opacity: 0.8; }
+            50% { transform: scale(1.3); opacity: 1; }
+            100% { transform: scale(0.95); opacity: 0.8; }
+        }
+        h1 {
+            font-size: 3.6rem;
+            font-weight: 800;
+            letter-spacing: -0.04em;
+            line-height: 1.15;
+            margin-bottom: 24px;
+            background: linear-gradient(180deg, #ffffff 30%, #94a3b8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .hero-desc {
+            font-size: 1.25rem;
+            color: var(--text-secondary);
+            max-width: 740px;
+            margin: 0 auto 36px;
+        }
+
+        .simulator-section {
+            margin: 40px auto 80px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(16px);
+        }
+        .sim-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 24px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-subtle);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .sim-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .sim-controls {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .sim-select {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-subtle);
+            color: #fff;
+            padding: 8px 14px;
+            border-radius: var(--radius-sm);
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        .toggle-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            border-radius: var(--radius-sm);
+            border: 1px solid var(--border-subtle);
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text-secondary);
+            font-size: 0.88rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .toggle-btn.active-online {
+            border-color: #10b981;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+        }
+        .toggle-btn.active-offline {
+            border-color: #ef4444;
+            background: rgba(239, 68, 68, 0.15);
+            color: #f87171;
+        }
+
+        .pipeline-grid {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr 1fr;
+            gap: 24px;
+            margin-bottom: 24px;
+        }
+        @media (max-width: 900px) {
+            .pipeline-grid { grid-template-columns: 1fr; }
+        }
+        .node-card {
+            background: rgba(10, 15, 29, 0.8);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            position: relative;
+        }
+        .node-card.highlight {
+            border-color: var(--accent-emerald);
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.15);
+        }
+        .node-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+        .code-box {
+            background: #060911;
+            border-radius: var(--radius-sm);
+            padding: 12px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: #cbd5e1;
+            overflow-x: auto;
+            max-height: 180px;
+        }
+        .status-pill {
+            font-size: 0.75rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+        .status-pill.success { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+        .status-pill.error { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+
+        .dlq-panel {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px dashed rgba(239, 68, 68, 0.3);
+            border-radius: var(--radius-md);
+            padding: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+        .dlq-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .dlq-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: rgba(239, 68, 68, 0.2);
+            color: #ef4444;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+        }
+
+        .terminal-container {
+            background: #030712;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            margin: 60px 0;
+            overflow: hidden;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+        }
+        .terminal-bar {
+            background: #0f172a;
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border-bottom: 1px solid var(--border-subtle);
+        }
+        .term-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .term-red { background: #ef4444; }
+        .term-yellow { background: #f59e0b; }
+        .term-green { background: #10b981; }
+        .terminal-body {
+            padding: 24px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.92rem;
+            color: #e2e8f0;
+            line-height: 1.8;
+        }
+        .term-prompt { color: #10b981; }
+        .term-highlight { color: #38bdf8; }
+        .term-success { color: #4ade80; }
+        .term-warn { color: #fbbf24; }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+            gap: 24px;
+            margin: 80px 0;
+        }
+        .feat-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 32px;
+            transition: all 0.3s;
+        }
+        .feat-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(16, 185, 129, 0.3);
+            background: var(--bg-card-hover);
+        }
+        .feat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--accent-emerald-glow);
+            color: var(--accent-emerald);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+        }
+        .feat-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+        .feat-text {
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+
+        .pricing-section {
+            padding: 80px 0;
+            text-align: center;
+        }
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 28px;
+            margin-top: 48px;
+            text-align: left;
+        }
+        .pricing-card {
+            background: var(--bg-card);
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            padding: 36px;
+            position: relative;
+        }
+        .pricing-card.popular {
+            border-color: var(--accent-emerald);
+            box-shadow: 0 0 35px rgba(16, 185, 129, 0.2);
+        }
+        .popular-badge {
+            position: absolute;
+            top: -14px;
+            right: 24px;
+            background: linear-gradient(135deg, var(--accent-emerald), #059669);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            border-radius: 9999px;
+            letter-spacing: 0.05em;
+        }
+        .price-val {
+            font-size: 2.8rem;
+            font-weight: 800;
+            color: #fff;
+            margin: 16px 0 8px;
+        }
+        .price-val span {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .price-features {
+            list-style: none;
+            margin: 28px 0;
+        }
+        .price-features li {
+            padding: 8px 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+        .price-features li::before {
+            content: "✓";
+            color: var(--accent-emerald);
+            font-weight: bold;
+        }
+
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(8px);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal-content {
+            background: #0f172a;
+            border: 1px solid var(--border-subtle);
+            border-radius: var(--radius-lg);
+            width: 90%;
+            max-width: 480px;
+            padding: 36px;
+            position: relative;
+            box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8);
+        }
+        .modal-close {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 1.5rem;
+            cursor: pointer;
+        }
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .form-group label {
+            display: block;
+            font-size: 0.88rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #cbd5e1;
+        }
+        .form-input {
+            width: 100%;
+            padding: 12px 16px;
+            border-radius: var(--radius-sm);
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border-subtle);
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.95rem;
+        }
+        .form-input:focus {
+            outline: none;
+            border-color: var(--accent-emerald);
+        }
+
+        footer {
+            border-top: 1px solid var(--border-subtle);
+            padding: 48px 0;
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="cyber-grid"></div>
+    <div class="glow-orb glow-1"></div>
+    <div class="glow-orb glow-2"></div>
+
+    <div class="container">
+        <nav>
+            <a href="#" class="logo">
+                <div class="logo-icon">🛡️</div>
+                <span>WebhookGuard</span>
+            </a>
+            <div class="nav-links">
+                <a href="#simulator">Live Simulator</a>
+                <a href="#cli">CLI Tunnel</a>
+                <a href="#features">Architecture</a>
+                <a href="#pricing">Pricing</a>
+                <button class="btn-primary" onclick="openBetaModal('starter')">Get Early Access</button>
+            </div>
+        </nav>
+
+        <section class="hero">
+            <div class="badge">
+                <span class="pulse-dot"></span>
+                <span>The 60-Second Webhook Firewall</span>
+            </div>
+            <h1>Never Lose a Stripe or Shopify<br>Webhook Again.</h1>
+            <p class="hero-desc">
+                When your backend crashes, deploys, or throws 500 errors, WebhookGuard intercepts failed events in a Dead-Letter Queue and auto-retries them with exponential backoff. Zero code changes required.
+            </p>
+            <div style="display: flex; gap: 16px; justify-content: center;">
+                <button class="btn-primary" onclick="openBetaModal('free')" style="font-size: 1.05rem; padding: 14px 28px;">
+                    Claim Free Beta Endpoint →
+                </button>
+                <a href="#simulator" class="btn-secondary" style="font-size: 1.05rem; padding: 14px 24px;">
+                    Test Live Simulator
+                </a>
+            </div>
+        </section>
+
+        <section class="simulator-section" id="simulator">
+            <div class="sim-header">
+                <div class="sim-title">
+                    <span>⚡ Live Webhook & DLQ Simulator</span>
+                    <span class="status-pill success" id="proxyStatus">Proxy Active (4ms Latency)</span>
+                </div>
+                <div class="sim-controls">
+                    <label style="font-size: 0.88rem; color: var(--text-secondary);">Provider Event:</label>
+                    <select class="sim-select" id="eventPresetSelect" onchange="changePreset()">
+                        <option value="stripe_sub">Stripe: customer.subscription.created ($99/mo)</option>
+                        <option value="stripe_inv">Stripe: invoice.payment_succeeded ($499.00)</option>
+                        <option value="shopify_order">Shopify: orders/paid (Order #4928)</option>
+                        <option value="clerk_user">Clerk: user.created (User: alex@domain.com)</option>
+                    </select>
+
+                    <div style="display: flex; gap: 8px;">
+                        <button class="toggle-btn active-online" id="btnOnline" onclick="setServerState(true)">
+                            🟢 Server Online (200 OK)
+                        </button>
+                        <button class="toggle-btn" id="btnOffline" onclick="setServerState(false)">
+                            🔴 Server Down (500 Crash)
+                        </button>
+                    </div>
+
+                    <button class="btn-primary" onclick="triggerSimulatedWebhook()" id="btnSend">
+                        🚀 Send Webhook
+                    </button>
+                </div>
+            </div>
+
+            <div class="pipeline-grid">
+                <div class="node-card">
+                    <div class="node-header">
+                        <span>1. Vendor Payload</span>
+                        <span id="vendorBadge" style="color: #38bdf8;">Stripe API</span>
+                    </div>
+                    <div class="code-box" id="vendorPayloadCode">
+{
+  "id": "evt_1P8K9m2eZvKYlo2C",
+  "type": "customer.subscription.created",
+  "data": {
+    "customer": "cus_Q1029481",
+    "plan": "starter_monthly",
+    "amount": 9900,
+    "status": "active"
+  }
+}
+                    </div>
+                </div>
+
+                <div class="node-card highlight">
+                    <div class="node-header">
+                        <span>2. WebhookGuard Firewall</span>
+                        <span class="status-pill success" id="guardPill">Intercepting (< 5ms)</span>
+                    </div>
+                    <div class="code-box" id="guardLogCode">
+[LOG 21:55:01] Ingested from in.webhookguard.com/wh_live_89
+[LOG 21:55:01] Verified HMAC: stripe-signature valid
+[LOG 21:55:01] Routing to: https://api.yourdomain.com/webhooks
+[LOG 21:55:01] Ready for packet transmission...
+                    </div>
+                </div>
+
+                <div class="node-card" id="serverCard">
+                    <div class="node-header">
+                        <span>3. Your Backend API</span>
+                        <span class="status-pill success" id="serverPill">200 OK</span>
+                    </div>
+                    <div class="code-box" id="serverLogCode">
+Ready to receive webhooks on localhost:3000...
+Status: 200 OK (Server healthy)
+                    </div>
+                </div>
+            </div>
+
+            <div class="dlq-panel" id="dlqBanner" style="display: none;">
+                <div class="dlq-info">
+                    <div class="dlq-icon">🚨</div>
+                    <div>
+                        <h4 style="color: #f87171; font-weight: 700; margin-bottom: 4px;">1 Failed Event Trapped in Dead-Letter Queue</h4>
+                        <p style="font-size: 0.88rem; color: var(--text-secondary);">
+                            Backend returned <strong style="color: #f87171;">500 Internal Server Error</strong>. Event held in encrypted queue to prevent customer data loss. Slack notification sent.
+                        </p>
+                    </div>
+                </div>
+                <button class="btn-primary" onclick="replayDLQ()" style="background: linear-gradient(135deg, #ef4444, #b91c1c);">
+                    ⚡ Auto-Replay Webhook Now
+                </button>
+            </div>
+        </section>
+
+        <section id="cli">
+            <div style="text-align: center; margin-bottom: 32px;">
+                <div class="badge">Local Tunnel Daemon</div>
+                <h2 style="font-size: 2.4rem; font-weight: 800;">Forward Production Webhooks to Localhost</h2>
+                <p style="color: var(--text-secondary); max-width: 600px; margin: 12px auto;">
+                    No more broken ngrok configurations. Stream live or staging webhooks directly into your local dev server with full payload diffs.
+                </p>
+            </div>
+
+            <div class="terminal-container">
+                <div class="terminal-bar">
+                    <div class="term-dot term-red"></div>
+                    <div class="term-dot term-yellow"></div>
+                    <div class="term-dot term-green"></div>
+                    <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 8px;">bash - WebhookGuard CLI</span>
+                </div>
+                <div class="terminal-body">
+                    <p><span class="term-prompt">$</span> npx webhookguard listen 3000 --endpoint=wh_live_prod</p>
+                    <p class="term-highlight">🛡️ WebhookGuard Tunnel connected to https://in.webhookguard.com/wh_live_prod</p>
+                    <p class="term-highlight">🚀 Forwarding incoming payloads -> http://localhost:3000/api/webhooks</p>
+                    <p>──────────────────────────────────────────────────────────────────────────</p>
+                    <p><span class="term-success">✔ [200 OK]</span> <span class="term-highlight">POST /api/webhooks</span> (Stripe: checkout.session.completed) - 18ms</p>
+                    <p><span class="term-success">✔ [200 OK]</span> <span class="term-highlight">POST /api/webhooks</span> (Shopify: orders/create #1029) - 12ms</p>
+                    <p><span class="term-warn">⚠ [500 ERR]</span> <span style="color:#ef4444;">POST /api/webhooks</span> (Clerk: user.created) -> <strong style="color:#f59e0b;">Saved to DLQ for Auto-Retry</strong></p>
+                </div>
+            </div>
+        </section>
+
+        <section id="features">
+            <div style="text-align: center; margin-bottom: 48px;">
+                <div class="badge">Enterprise Resilience for Startups</div>
+                <h2 style="font-size: 2.4rem; font-weight: 800;">Built for Maximum Reliability</h2>
+            </div>
+            <div class="features-grid">
+                <div class="feat-card">
+                    <div class="feat-icon">⚡</div>
+                    <h3 class="feat-title">Sub-10ms Edge Ingestion</h3>
+                    <p class="feat-text">Deployed across 300+ global Cloudflare edge nodes so your webhooks arrive with zero latency penalty.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">🔄</div>
+                    <h3 class="feat-title">Exponential Backoff Engine</h3>
+                    <p class="feat-text">Automatically retries failed deliveries at 1m, 5m, 15m, 1h, and 24h intervals with smart jitter to prevent thundering herds.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">🛡️</div>
+                    <h3 class="feat-title">HMAC Signature Firewall</h3>
+                    <p class="feat-text">Verifies cryptographic signatures for Stripe, Shopify, GitHub, and Twilio before passing requests to your private server.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">🔔</div>
+                    <h3 class="feat-title">Slack & Discord Alerts</h3>
+                    <p class="feat-text">Get instant real-time alerts when your API drops an event, complete with payload preview and one-click replay links.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">💾</div>
+                    <h3 class="feat-title">90-Day Encrypted Storage</h3>
+                    <p class="feat-text">Every payload is encrypted with AES-256 and stored with full headers so you can audit historical billing events anytime.</p>
+                </div>
+                <div class="feat-card">
+                    <div class="feat-icon">🔌</div>
+                    <h3 class="feat-title">1-Click Local Replay</h3>
+                    <p class="feat-text">Reprocess an event directly from your dashboard or local terminal after deploying your code fix.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="pricing-section" id="pricing">
+            <div class="badge">Transparent Developer Pricing</div>
+            <h2 style="font-size: 2.4rem; font-weight: 800;">Start Free. Scale As You Grow.</h2>
+            <p style="color: var(--text-secondary); max-width: 600px; margin: 12px auto;">
+                Never let an unexpected server reboot cost you a paying customer.
+            </p>
+
+            <div class="pricing-grid">
+                <div class="pricing-card">
+                    <h3>Hobby Developer</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">For side-projects and MVPs</p>
+                    <div class="price-val">$0 <span>/ month</span></div>
+                    <ul class="price-features">
+                        <li>5,000 webhooks / month</li>
+                        <li>1 Ingestion Endpoint</li>
+                        <li>3-Day Event Retention</li>
+                        <li>Manual Replay UI</li>
+                        <li>Community Support</li>
+                    </ul>
+                    <button class="btn-secondary" onclick="openBetaModal('free')" style="width: 100%;">Get Started Free</button>
+                </div>
+
+                <div class="pricing-card popular">
+                    <div class="popular-badge">Most Popular</div>
+                    <h3>Starter (Wedge)</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">For revenue-generating SaaS</p>
+                    <div class="price-val">$29 <span>/ month</span></div>
+                    <ul class="price-features">
+                        <li>100,000 webhooks / month</li>
+                        <li>5 Ingestion Endpoints</li>
+                        <li>30-Day Event Retention</li>
+                        <li>Automated DLQ Auto-Retry</li>
+                        <li>Slack & Discord Alerts</li>
+                        <li>Local CLI Tunnel Daemon</li>
+                    </ul>
+                    <button class="btn-primary" onclick="openBetaModal('starter')" style="width: 100%;">Claim Beta Access ($29)</button>
+                </div>
+
+                <div class="pricing-card">
+                    <h3>Growth Team</h3>
+                    <p style="color: var(--text-secondary); font-size: 0.9rem;">For scaling B2B companies</p>
+                    <div class="price-val">$79 <span>/ month</span></div>
+                    <ul class="price-features">
+                        <li>500,000 webhooks / month</li>
+                        <li>Unlimited Endpoints</li>
+                        <li>90-Day Event Retention</li>
+                        <li>Custom Retry Logic & Transforms</li>
+                        <li>Dedicated Static Egress IPs</li>
+                        <li>Priority 1-Hour SLA Support</li>
+                    </ul>
+                    <button class="btn-secondary" onclick="openBetaModal('pro')" style="width: 100%;">Upgrade to Pro ($79)</button>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <div class="container">
+                <p>© 2026 WebhookGuard Inc. Built for resilient developer infrastructure.</p>
+                <p style="margin-top: 8px; font-size: 0.82rem;">Validated via Hacker News, Reddit, GitHub, and G2 competitive intelligence.</p>
+            </div>
+        </footer>
+    </div>
+
+    <div class="modal-overlay" id="betaModal">
+        <div class="modal-content">
+            <button class="modal-close" onclick="closeBetaModal()">×</button>
+            <h3 style="font-size: 1.4rem; font-weight: 700; margin-bottom: 8px;" id="modalTitle">Get Early Access</h3>
+            <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 24px;">
+                Enter your details to generate your early access developer key. First 100 developers get 3 months free.
+            </p>
+            <form onsubmit="handleSignup(event)">
+                <div class="form-group">
+                    <label>Developer / Company Name</label>
+                    <input type="text" class="form-input" id="userName" placeholder="e.g. Alex (Acme SaaS)" required>
+                </div>
+                <div class="form-group">
+                    <label>Work Email</label>
+                    <input type="email" class="form-input" id="userEmail" placeholder="alex@company.com" required>
+                </div>
+                <div class="form-group">
+                    <label>Primary Webhook Source</label>
+                    <select class="form-input" id="userSource">
+                        <option>Stripe Billing & Subscriptions</option>
+                        <option>Shopify E-Commerce</option>
+                        <option>Clerk / Auth0 Authentication</option>
+                        <option>GitHub / CI Webhooks</option>
+                        <option>Custom REST APIs</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; padding: 14px;" id="submitBtn">
+                    Generate My API Key →
+                </button>
+            </form>
+            <div id="successMsg" style="display: none; margin-top: 20px; text-align: center;">
+                <div style="font-size: 2rem; margin-bottom: 8px;">🎉</div>
+                <h4 style="color: #34d399; font-weight: 700;">You're in! Access Key Generated:</h4>
+                <div style="background: #030712; padding: 10px; border-radius: 6px; font-family: monospace; color: #38bdf8; margin: 12px 0; font-size: 0.85rem;" id="keyDisplay">
+                    whg_live_8f9a2b0c1e4d
+                </div>
+                <p style="font-size: 0.8rem; color: var(--text-muted);">We've emailed your setup guide and dashboard link.</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let serverOnline = true;
+
+        const presets = {
+            stripe_sub: {
+                vendor: "Stripe API",
+                payload: {
+                    id: "evt_1P8K9m2eZvKYlo2C",
+                    type: "customer.subscription.created",
+                    data: {
+                        customer: "cus_Q1029481",
+                        plan: "starter_monthly",
+                        amount: 9900,
+                        status: "active"
+                    }
+                }
+            },
+            stripe_inv: {
+                vendor: "Stripe API",
+                payload: {
+                    id: "evt_3N8L4x1bXzKYlo9P",
+                    type: "invoice.payment_succeeded",
+                    data: {
+                        invoice: "in_92019482",
+                        customer: "cus_A938201",
+                        amount_paid: 49900,
+                        paid: true
+                    }
+                }
+            },
+            shopify_order: {
+                vendor: "Shopify API",
+                payload: {
+                    id: "evt_sh_992019",
+                    type: "orders/paid",
+                    data: {
+                        order_number: 4928,
+                        total_price: "189.50",
+                        customer_email: "jane@client.com"
+                    }
+                }
+            },
+            clerk_user: {
+                vendor: "Clerk API",
+                payload: {
+                    id: "evt_user_39102",
+                    type: "user.created",
+                    data: {
+                        user_id: "user_2a98f7",
+                        email: "alex@domain.com",
+                        created_at: 1785859200
+                    }
+                }
+            }
+        };
+
+        function changePreset() {
+            const key = document.getElementById('eventPresetSelect').value;
+            const p = presets[key];
+            document.getElementById('vendorBadge').innerText = p.vendor;
+            document.getElementById('vendorPayloadCode').innerText = JSON.stringify(p.payload, null, 2);
+        }
+
+        function setServerState(online) {
+            serverOnline = online;
+            const btnOn = document.getElementById('btnOnline');
+            const btnOff = document.getElementById('btnOffline');
+            const serverPill = document.getElementById('serverPill');
+            const serverCard = document.getElementById('serverCard');
+
+            if (online) {
+                btnOn.className = 'toggle-btn active-online';
+                btnOff.className = 'toggle-btn';
+                serverPill.className = 'status-pill success';
+                serverPill.innerText = '200 OK';
+                serverCard.style.borderColor = 'var(--border-subtle)';
+                document.getElementById('dlqBanner').style.display = 'none';
+            } else {
+                btnOn.className = 'toggle-btn';
+                btnOff.className = 'toggle-btn active-offline';
+                serverPill.className = 'status-pill error';
+                serverPill.innerText = '500 Server Error';
+                serverCard.style.borderColor = '#ef4444';
+            }
+        }
+
+        function triggerSimulatedWebhook() {
+            const btn = document.getElementById('btnSend');
+            const guardLog = document.getElementById('guardLogCode');
+            const serverLog = document.getElementById('serverLogCode');
+            const dlqBanner = document.getElementById('dlqBanner');
+
+            btn.innerText = "⏳ Ingesting...";
+            btn.disabled = true;
+
+            const timeStr = new Date().toLocaleTimeString();
+
+            guardLog.innerText = `[${timeStr}] Ingested packet at edge proxy (in.webhookguard.com)\n[${timeStr}] Verified HMAC signature.\n[${timeStr}] Forwarding to your backend endpoint...`;
+
+            setTimeout(() => {
+                if (serverOnline) {
+                    serverLog.innerText = `[${timeStr}] HTTP POST /webhooks\nStatus: 200 OK\nPayload successfully processed in 14ms.`;
+                    guardLog.innerText += `\n[${timeStr}] Destination responded 200 OK. Marked DELIVERED.`;
+                    dlqBanner.style.display = 'none';
+                } else {
+                    serverLog.innerText = `[${timeStr}] HTTP POST /webhooks\nStatus: 500 INTERNAL SERVER ERROR (Database connection timeout)\nDelivery Failed!`;
+                    guardLog.innerText += `\n[${timeStr}] Destination returned 500 ERROR.\n[${timeStr}] TRAPPED IN DEAD-LETTER QUEUE (DLQ).\n[${timeStr}] Slack alert dispatched. Scheduled auto-retry in 60s.`;
+                    dlqBanner.style.display = 'flex';
+                }
+                btn.innerText = "🚀 Send Webhook";
+                btn.disabled = false;
+            }, 600);
+        }
+
+        function replayDLQ() {
+            alert("⚡ WebhookGuard Auto-Replay Triggered! The event has been successfully redelivered with exponential backoff.");
+            setServerState(true);
+            triggerSimulatedWebhook();
+        }
+
+        function openBetaModal(tier) {
+            document.getElementById('betaModal').style.display = 'flex';
+            if (tier === 'free') document.getElementById('modalTitle').innerText = "Claim Free Beta Access";
+            if (tier === 'starter') document.getElementById('modalTitle').innerText = "Join Starter Beta ($29/mo)";
+            if (tier === 'pro') document.getElementById('modalTitle').innerText = "Join Pro Growth Beta ($79/mo)";
+        }
+
+        function closeBetaModal() {
+            document.getElementById('betaModal').style.display = 'none';
+        }
+
+        function handleSignup(e) {
+            e.preventDefault();
+            const btn = document.getElementById('submitBtn');
+            btn.innerText = "Generating Access Key...";
+            btn.disabled = true;
+
+            setTimeout(() => {
+                btn.style.display = 'none';
+                document.getElementById('successMsg').style.display = 'block';
+                const randKey = 'whg_live_' + Math.random().toString(36).substring(2, 12);
+                document.getElementById('keyDisplay').innerText = randKey;
+            }, 700);
+        }
+    </script>
+</body>
+</html>

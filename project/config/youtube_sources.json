@@ -1,0 +1,43 @@
+{
+  "channels": [
+    {
+      "name": "MicroConf",
+      "handle": "@MicroConf",
+      "category": "bootstrapped_b2b_saas"
+    },
+    {
+      "name": "Y Combinator",
+      "handle": "@ycombinator",
+      "category": "venture_b2b_saas"
+    },
+    {
+      "name": "SaaStr",
+      "handle": "@SaaStr",
+      "category": "enterprise_saas"
+    },
+    {
+      "name": "LennysPodcast",
+      "handle": "@LennysPodcast",
+      "category": "product_growth"
+    },
+    {
+      "name": "Starter Story",
+      "handle": "@StarterStory",
+      "category": "indie_business_breakdowns"
+    }
+  ],
+  "pain_keywords": [
+    "switched from",
+    "cancelled",
+    "nightmare",
+    "too expensive",
+    "bill exploded",
+    "frustrating",
+    "broken",
+    "pricing increase",
+    "support was awful",
+    "churn",
+    "lost money",
+    "migration headache"
+  ]
+}
