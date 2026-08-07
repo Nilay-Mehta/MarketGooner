@@ -3,6 +3,36 @@ import sqlite3
 import time
 from contextlib import contextmanager
 from typing import List, Dict, Any, Optional
+import numpy as np
+
+_embedder = None
+_embedding_cache = None
+_embedding_ids = None
+
+def _init_embeddings(db_path: str):
+    global _embedder, _embedding_cache, _embedding_ids
+    if _embedder is None:
+        try:
+            from sentence_transformers import SentenceTransformer
+            _embedder = SentenceTransformer('all-MiniLM-L6-v2')
+            with get_db(db_path) as conn:
+                cursor = conn.cursor()
+                cursor.execute("SELECT raw_item_id, embedding FROM raw_item_embeddings")
+                rows = cursor.fetchall()
+                ids = []
+                vecs = []
+                for row in rows:
+                    ids.append(row[0])
+                    vecs.append(np.frombuffer(row[1], dtype=np.float32))
+                _embedding_ids = ids
+                if vecs:
+                    _embedding_cache = np.vstack(vecs)
+                else:
+                    _embedding_cache = np.empty((0, 384), dtype=np.float32)
+        except ImportError:
+            print("[!] sentence-transformers not installed, semantic dedup disabled.")
+            _embedder = False
+
 
 DEFAULT_DB_PATH = os.path.join(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))),
@@ -58,6 +88,14 @@ def init_db(db_path: str = DEFAULT_DB_PATH) -> None:
             quote TEXT,
             cluster_id INTEGER,
             extracted_at INTEGER NOT NULL
+        );
+        """)
+
+        # 2.5 Embeddings Table
+        cursor.execute("""
+        CREATE TABLE IF NOT EXISTS raw_item_embeddings (
+            raw_item_id INTEGER PRIMARY KEY REFERENCES raw_items(id),
+            embedding BLOB NOT NULL
         );
         """)
 
@@ -140,6 +178,23 @@ def insert_raw_item(
     Returns the integer id if newly inserted, or None if item already exists (deduplicated).
     """
     init_db(db_path)
+    
+    global _embedder, _embedding_cache, _embedding_ids
+    if _embedder is None:
+        _init_embeddings(db_path)
+
+    # Semantic deduplication check
+    embedding_vec = None
+    if _embedder:
+        text = f"{title or ''} {(content or '')[:200]}".strip()
+        if text:
+            query_vec = _embedder.encode(text)
+            embedding_vec = query_vec.astype(np.float32)
+            if _embedding_cache.shape[0] > 0:
+                sims = np.dot(_embedding_cache, embedding_vec)
+                if np.max(sims) > 0.90:
+                    return None  # semantic duplicate
+
     fetched_at = int(time.time())
     with get_db(db_path) as conn:
         cursor = conn.cursor()
@@ -153,8 +208,24 @@ def insert_raw_item(
                 source, source_id, url, title, content,
                 score, comments_count, created_utc, fetched_at, topic_query, mentioned_incumbent
             ))
+            new_id = cursor.lastrowid
+            
+            # Save embedding
+            if embedding_vec is not None:
+                cursor.execute("""
+                INSERT INTO raw_item_embeddings (raw_item_id, embedding)
+                VALUES (?, ?)
+                """, (new_id, embedding_vec.tobytes()))
+                
+                # Update in-memory cache
+                if _embedding_cache.shape[0] == 0:
+                    _embedding_cache = embedding_vec.reshape(1, -1)
+                else:
+                    _embedding_cache = np.vstack([_embedding_cache, embedding_vec])
+                _embedding_ids.append(new_id)
+
             conn.commit()
-            return cursor.lastrowid
+            return new_id
         except sqlite3.IntegrityError:
             return None
 

@@ -1,10 +1,10 @@
 import json
-import math
-import re
-from typing import List, Dict, Any, Optional
+import asyncio
+from typing import List, Dict, Any, Optional, Tuple, Set
 from pydantic import BaseModel, Field
 from src.key_manager import KeyManager
 from src.storage import db
+from src.config import RANK_SEMAPHORE_LIMIT
 
 class ScoreAxis(BaseModel):
     score: int = Field(..., ge=0, le=10, description="Score between 0 and 10")
@@ -31,15 +31,12 @@ class IdeaRanker:
     def __init__(self, key_manager: Optional[KeyManager] = None, db_path: str = db.DEFAULT_DB_PATH):
         self.km = key_manager or KeyManager()
         self.db_path = db_path
+        self.semaphore = asyncio.Semaphore(RANK_SEMAPHORE_LIMIT)
+
 
     def rank_clusters(self, min_cluster_size: int = 5, min_source_diversity: int = 2) -> List[Dict[str, Any]]:
-        """
-        Evaluates qualified clusters in SQLite, generates unbundled SaaS wedges,
-        validates pain citations, and stores validated ideas in the ideas table.
-        """
         with db.get_db(self.db_path) as conn:
             cursor = conn.cursor()
-            # Clear old candidate ideas before re-ranking
             cursor.execute("DELETE FROM ideas WHERE status = 'candidate'")
             cursor.execute("""
             SELECT * FROM clusters 
@@ -50,75 +47,76 @@ class IdeaRanker:
             conn.commit()
 
         if not clusters:
-            print("\n[!] No qualifying clusters (size >= 5 and source_diversity >= 2) — scan more diverse sources.")
+            print("\\n[!] No qualifying clusters.")
             return []
 
+        async def _process_all():
+            tasks = []
+            valid_tasks = []
+            for cluster in clusters:
+                cluster_id = cluster["id"]
+                c_size = cluster.get("size", 0)
+                c_div = cluster.get("source_diversity", 0)
+                if c_size < min_cluster_size or c_div < min_source_diversity:
+                    continue
+                pains = db.get_pains_by_cluster(cluster_id, db_path=self.db_path)
+                if not pains or len(pains) < min_cluster_size:
+                    continue
+                tasks.append(self._synthesize_idea_for_cluster_with_validation(cluster, pains))
+                valid_tasks.append((cluster, pains))
+            
+            if not tasks: return []
+            
+            results = await asyncio.gather(*tasks)
+            return list(zip(valid_tasks, results))
+
+        outcomes = asyncio.run(_process_all())
+
         ranked_ideas = []
-        for cluster in clusters:
-            cluster_id = cluster["id"]
-
-            # Bug #1 fix: hard gate — assert before every LLM call
-            c_size = cluster.get("size", 0)
-            c_div = cluster.get("source_diversity", 0)
-            if c_size < min_cluster_size or c_div < min_source_diversity:
-                print(f"  [gate] Cluster {cluster_id} skipped: size={c_size}, div={c_div} — does not meet gate (size>={min_cluster_size}, div>={min_source_diversity})")
+        for (cluster, pains), idea_data in outcomes:
+            if not idea_data:
                 continue
 
-            pains = db.get_pains_by_cluster(cluster_id, db_path=self.db_path)
-            if not pains or len(pains) < min_cluster_size:
-                print(f"  [gate] Cluster {cluster_id} skipped: only {len(pains)} pain points returned from DB")
-                continue
+            trend_verdict, trend_slope = self._check_trend(idea_data["wedge"])
+            dist_score = idea_data["score_distribution"]
+            if trend_verdict == "declining":
+                dist_score = min(3, dist_score)
+            elif trend_verdict == "insufficient_data":
+                dist_score = min(6, dist_score)
+            
+            idea_data["score_distribution"] = dist_score
+            idea_data["score_total"] = (
+                idea_data["score_frequency"] +
+                idea_data["score_wtp"] +
+                idea_data["score_incumbent_weakness"] +
+                idea_data["score_feasibility"] +
+                idea_data["score_distribution"]
+            )
 
-            idea_data = self._synthesize_idea_for_cluster_with_validation(cluster, pains)
-            if idea_data:
-                # Validate trend with pytrends if available
-                trend_verdict, trend_slope = self._check_trend(idea_data["wedge"])
-                
-                # Apply trend capping rules
-                dist_score = idea_data["score_distribution"]
-                if trend_verdict == "declining":
-                    dist_score = min(3, dist_score)
-                    print(f"  [-] Trend declining for '{idea_data['name']}': capped distribution score at 3.")
-                elif trend_verdict == "insufficient_data":
-                    dist_score = min(6, dist_score)
-                    print(f"  [?] Insufficient trend data for '{idea_data['name']}': capped distribution score at 6.")
-                
-                idea_data["score_distribution"] = dist_score
-                idea_data["score_total"] = (
-                    idea_data["score_frequency"] +
-                    idea_data["score_wtp"] +
-                    idea_data["score_incumbent_weakness"] +
-                    idea_data["score_feasibility"] +
-                    idea_data["score_distribution"]
-                )
+            idea_id = db.insert_idea(
+                cluster_id=cluster["id"],
+                name=idea_data["name"],
+                wedge=idea_data["wedge"],
+                icp=idea_data["icp"],
+                score_frequency=idea_data["score_frequency"],
+                score_wtp=idea_data["score_wtp"],
+                score_incumbent_weakness=idea_data["score_incumbent_weakness"],
+                score_feasibility=idea_data["score_feasibility"],
+                score_distribution=idea_data["score_distribution"],
+                representative_quote=idea_data.get("representative_quote"),
+                status="candidate",
+                trend_verdict=trend_verdict,
+                trend_slope=trend_slope,
+                db_path=self.db_path
+            )
 
-                idea_id = db.insert_idea(
-                    cluster_id=cluster_id,
-                    name=idea_data["name"],
-                    wedge=idea_data["wedge"],
-                    icp=idea_data["icp"],
-                    score_frequency=idea_data["score_frequency"],
-                    score_wtp=idea_data["score_wtp"],
-                    score_incumbent_weakness=idea_data["score_incumbent_weakness"],
-                    score_feasibility=idea_data["score_feasibility"],
-                    score_distribution=idea_data["score_distribution"],
-                    representative_quote=idea_data.get("representative_quote"),
-                    status="candidate",
-                    trend_verdict=trend_verdict,
-                    trend_slope=trend_slope,
-                    db_path=self.db_path
-                )
-                idea_data["id"] = idea_id
-                idea_data["cluster_label"] = cluster["label"]
-                idea_data["cluster_size"] = cluster["size"]
-                idea_data["source_diversity"] = cluster["source_diversity"]
-                idea_data["trend_verdict"] = trend_verdict
-                idea_data["trend_slope"] = trend_slope
-                ranked_ideas.append(idea_data)
+            idea_data["id"] = idea_id
+            idea_data["cluster_id"] = cluster["id"]
+            idea_data["trend_verdict"] = trend_verdict
+            ranked_ideas.append(idea_data)
 
-        # Return sorted by total score
-        ranked_ideas.sort(key=lambda x: x["score_total"], reverse=True)
         return ranked_ideas
+
 
     def _check_trend(self, wedge: str) -> tuple[str, float]:
         """Runs pytrends validation on wedge keywords."""
@@ -130,7 +128,8 @@ class IdeaRanker:
         except Exception:
             return "insufficient_data", 0.0
 
-    def _synthesize_idea_for_cluster_with_validation(
+
+    async def _synthesize_idea_for_cluster_with_validation(
         self, cluster: Dict[str, Any], pains: List[Dict[str, Any]]
     ) -> Optional[Dict[str, Any]]:
         """
@@ -160,13 +159,32 @@ class IdeaRanker:
 
         # Attempt 1
         print(f"  [rank] Scoring cluster {cluster['id']} ('{cluster['label']}' - {len(pains_payload)} pains)...", flush=True)
-        proposal: Optional[IdeaProposal] = self.km.generate_structured(
-            prompt=prompt,
-            response_model=IdeaProposal,
-            system_prompt=system_prompt
-        )
+        async with self.semaphore:
+            proposal: Optional[IdeaProposal] = await asyncio.to_thread(
+                self.km.generate_structured,
+                prompt,
+                IdeaProposal,
+                system_prompt
+            )
 
         is_valid, invalid_ids = self._validate_citations(proposal, valid_pain_ids)
+        if not is_valid and proposal is not None:
+            # Attempt 2 (Retry with error feedback)
+            retry_prompt = (
+                f"{prompt}\n\n"
+                f"ERROR IN PREVIOUS ATTEMPT: You cited invalid pain IDs: {invalid_ids}.\n"
+                f"The ONLY valid pain_id integers in this cluster are: {sorted(list(valid_pain_ids))}.\n"
+                f"Please regenerate the proposal citing ONLY valid pain IDs from this list."
+            )
+            async with self.semaphore:
+                proposal = await asyncio.to_thread(
+                    self.km.generate_structured,
+                    retry_prompt,
+                    IdeaProposal,
+                    system_prompt
+                )
+            is_valid, invalid_ids = self._validate_citations(proposal, valid_pain_ids)
+
         if not is_valid and proposal is not None:
             # Attempt 2 (Retry with error feedback)
             retry_prompt = (

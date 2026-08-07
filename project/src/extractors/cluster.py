@@ -1,11 +1,13 @@
 import math
 import re
+import asyncio
 from typing import List, Dict, Any, Optional
 from collections import defaultdict, Counter
 import random
 from pydantic import BaseModel, Field
 from src.key_manager import KeyManager
 from src.storage import db
+from src.config import RANK_SEMAPHORE_LIMIT
 
 class CoherenceCheck(BaseModel):
     coherent: bool = Field(..., description="True if the pain points are all about the same underlying problem")
@@ -32,6 +34,7 @@ class ProblemClusterer:
     def __init__(self, key_manager: Optional[KeyManager] = None, db_path: str = db.DEFAULT_DB_PATH):
         self.km = key_manager or KeyManager()
         self.db_path = db_path
+        self.semaphore = asyncio.Semaphore(RANK_SEMAPHORE_LIMIT)
 
     # -------------------------------------------------------------------------
     # Tokenizer helper
@@ -68,22 +71,29 @@ class ProblemClusterer:
     # -------------------------------------------------------------------------
     # Main entry point
     # -------------------------------------------------------------------------
-    def _check_coherence(self, cluster_pains: List[Dict[str, Any]]) -> CoherenceCheck:
-        sample_size = 12 if len(cluster_pains) > 30 else 8
+
+    async def _check_coherence_async(self, cluster_pains: List[Dict[str, Any]]) -> CoherenceCheck:
+        sample_size = len(cluster_pains)
         sample_pains = random.sample(cluster_pains, min(sample_size, len(cluster_pains)))
         pain_text = "\n".join([f"ID: {p['id']}, Summary: {p.get('summary', '')}" for p in sample_pains])
-        prompt = f"Here are {len(sample_pains)} randomly sampled pain summaries from a cluster.\n\n{pain_text}\n\nQuestion: Is there a clear dominant problem/theme across the MAJORITY of these summaries? If yes, set coherent=true, provide the dominant_theme, and list the IDs of any outliers that do NOT fit this theme. If it is a random garbage bag of unrelated issues with no clear dominant theme, set coherent=false.\nAnswer strictly in JSON with coherent (true/false), dominant_theme (str), and outliers (list of IDs)."
+        prompt = f"Here are {len(sample_pains)} randomly sampled pain summaries from a cluster.\n\n{pain_text}\n\nQuestion: Is there a specific, actionable dominant problem/theme across these summaries? REJECT the cluster (set coherent=false) if ANY 2 of the sampled pains are about clearly different domains. The dominant_theme MUST be highly specific (3+ words) and reference a specific product, domain, or workflow. Broad themes like 'Cost and Complexity' are unacceptable and should trigger coherent=false. If it is a garbage bag of unrelated issues, or if the theme is too broad/generic, set coherent=false.\nAnswer strictly in JSON with coherent (true/false), dominant_theme (str), and outliers (list of IDs)."
         system_prompt = "You are a strict B2B SaaS Venture Architect acting as a semantic coherence judge."
         try:
-            res = self.km.generate_structured(
-                prompt=prompt,
-                response_model=CoherenceCheck,
-                system_prompt=system_prompt
-            )
+            async with self.semaphore:
+                res = await asyncio.to_thread(
+                    self.km.generate_structured,
+                    prompt=prompt,
+                    response_model=CoherenceCheck,
+                    system_prompt=system_prompt
+                )
             return res
         except Exception as e:
             print(f"[!] Coherence check failed: {e}")
             return CoherenceCheck(coherent=False, dominant_theme="Error", outliers=[])
+
+    def _check_coherence(self, cluster_pains: List[Dict[str, Any]]) -> CoherenceCheck:
+        return asyncio.run(self._check_coherence_async(cluster_pains))
+
 
     def cluster_pain_points(
         self,
@@ -188,15 +198,25 @@ class ProblemClusterer:
         # ------------------------------------------------------------------
         # Score & persist each cluster
         # ------------------------------------------------------------------
+
         saved_clusters = []
         touched_cluster_ids = []
+        
+        valid_clusters = [c for c in clusters_map if c]
+        
+        async def _process_all():
+            tasks = [self._check_coherence_async(c) for c in valid_clusters]
+            results = await asyncio.gather(*tasks)
+            return results
+            
+        coherence_results = asyncio.run(_process_all())
 
-        for cluster_pains in clusters_map:
-            if not cluster_pains:
-                continue
+        for cluster_pains, coherence_res in zip(valid_clusters, coherence_results):
+            if coherence_res:
+                outlier_ids = set(coherence_res.outliers)
+            else:
+                outlier_ids = set()
 
-            coherence_res = self._check_coherence(cluster_pains)
-            outlier_ids = set(coherence_res.outliers)
             filtered_pains = [p for p in cluster_pains if p["id"] not in outlier_ids]
             
             size = len(filtered_pains)
@@ -222,8 +242,8 @@ class ProblemClusterer:
                 if p.get("wtp_type") not in ["unknown", "Unknown", None, ""]
             )
 
-            label = coherence_res.dominant_theme
-            status = "active" if coherence_res.coherent else "incoherent"
+            label = coherence_res.dominant_theme if coherence_res else "Auto-Cluster (Fallback)"
+            status = "active" if (coherence_res and coherence_res.coherent) or not coherence_res else "incoherent"
 
             cluster_id = db.upsert_cluster(
                 label=label,

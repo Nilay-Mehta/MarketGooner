@@ -15,10 +15,11 @@ class KeyManager:
     """Intelligent multi-provider routing and structured token optimizer (Groq, GitHub, Gemini, OpenRouter)."""
 
     def __init__(self):
-        self.groq_key = os.getenv("GROQ_API_KEY", "").strip() or os.getenv("GROQ_API_KEYS", "").split(",")[0].strip()
+        self.groq_key = os.getenv("GROQ_API_KEY2", "").strip() or os.getenv("GROQ_API_KEY", "").strip()
         self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip()
         self.openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
         self.github_token = os.getenv("GITHUB_TOKEN", "").strip()
+        self.tokenrouter_key = None
 
     def generate_completion(self, prompt: str, task_type: str = "fast_extract", system_prompt: str = "You are an elite Market Research & Gap Identification AI.", json_mode: bool = False) -> str:
         return self.route_completion(prompt=prompt, task_type=task_type, system_prompt=system_prompt, json_mode=json_mode)
@@ -53,12 +54,18 @@ class KeyManager:
         Cascades through providers on network OR validation errors.
         """
         sys_prompt = system_prompt or "You are an elite B2B Market Research & Gap Mining Analyst."
-        
+
         # 1. Try Groq via Instructor
         if self.groq_key:
             groq_res = self._structured_groq(prompt, response_model, sys_prompt)
             if groq_res is not None:
                 return groq_res
+
+        # 2. Try TokenRouter via manual requests (Since Groq is exhausted)
+        if self.tokenrouter_key:
+            tr_res = self._structured_tokenrouter(prompt, response_model, sys_prompt)
+            if tr_res is not None:
+                return tr_res
 
         # 2. Try GitHub Models via Instructor
         if self.github_token:
@@ -176,6 +183,37 @@ class KeyManager:
                 )
             except Exception:
                 continue
+        return None
+
+    def _structured_tokenrouter(self, prompt: str, response_model: Type[T], system_prompt: str) -> Optional[T]:
+        import json
+        import re
+        try:
+            schema_instruction = f"\nYou MUST respond with valid JSON strictly conforming to this Pydantic schema:\n{json.dumps(response_model.model_json_schema())}"
+            payload = {
+                "model": "moonshotai/kimi-k3-free",
+                "messages": [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"{prompt}\n{schema_instruction}"}
+                ],
+                "temperature": 0.1,
+                "max_tokens": 4096
+            }
+            res = requests.post(
+                "https://api.tokenrouter.com/v1/chat/completions",
+                headers={"Authorization": f"Bearer {self.tokenrouter_key}", "Content-Type": "application/json"},
+                json=payload,
+                timeout=25
+            )
+            if res.status_code == 200:
+                raw_json = res.json()["choices"][0]["message"]["content"]
+                clean_json = re.sub(r'^```json\s*', '', raw_json.strip())
+                clean_json = re.sub(r'\s*```$', '', clean_json.strip())
+                return response_model.model_validate_json(clean_json)
+            else:
+                print(f"TokenRouter Error: {res.status_code} - {res.text}")
+        except Exception:
+            pass
         return None
 
     def _call_groq(self, prompt: str, system_prompt: str, json_mode: bool = False) -> Optional[str]:

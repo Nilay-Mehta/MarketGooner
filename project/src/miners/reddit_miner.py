@@ -94,7 +94,7 @@ class RedditMiner:
                                     body = c_child.get("data", {}).get("body", "").strip()
                                     if body and body not in ["[deleted]", "[removed]"] and "I am a bot" not in body:
                                         top_comments.append(body)
-                                        if len(top_comments) >= 10:
+                                        if len(top_comments) >= 3:
                                             break
                         except Exception:
                             pass

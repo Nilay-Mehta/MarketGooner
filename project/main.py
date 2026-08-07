@@ -50,6 +50,8 @@ def print_banner():
         print(f"{title}\n{subtitle}")
         print("=" * 70)
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 def cmd_scan(
     topic: str,
     subreddits: Optional[List[str]] = None,
@@ -70,152 +72,128 @@ def cmd_scan(
     if alternativeto: source_list.append(f"AlternativeTo ({', '.join(alternativeto)})")
 
     if HAS_RICH:
-        console.print(f"\n[bold green][+] Target Domain:[/bold green] [yellow]{topic}[/yellow]")
+        console.print(f"\\n[bold green][+] Target Domain:[/bold green] [yellow]{topic}[/yellow]")
         console.print(f"[bold green][+] Active Sources:[/bold green] {', '.join(source_list)}")
     else:
-        print(f"\nTarget Domain: {topic}")
+        print(f"\\nTarget Domain: {topic}")
         print(f"Active Sources: {', '.join(source_list)}")
 
     total_inserted = 0
     total_found = 0
 
-    # 1. Reddit
-    reddit_miner = RedditMiner()
-    for sub in subreddits:
-        if HAS_RICH:
-            console.print(f"[cyan][>] Mining Reddit r/{sub}...[/cyan]")
-        items = reddit_miner.search_subreddit(subreddit=sub, query=topic, limit=limit_per_source)
+    def insert_items(items, source_type, *args):
+        nonlocal total_inserted, total_found
         total_found += len(items)
         for item in items:
+            content = item.get("content", "")
+            if source_type != "youtube" and content and len(content) > 1200:
+                content = content[:800] + " ... " + content[-400:]
+            
             inserted_id = db.insert_raw_item(
-                source=item.get("source", f"reddit:r/{sub}"),
-                source_id=item.get("source_id", item.get("permalink", "")),
+                source=item.get("source", ""),
+                source_id=item.get("source_id", ""),
                 url=item.get("url", ""),
                 title=item.get("title", ""),
-                content=item.get("content", ""),
+                content=content,
                 score=item.get("score", 0),
                 comments_count=item.get("comments_count", 0),
                 created_utc=item.get("created_utc", 0),
-                topic_query=topic
+                topic_query=topic,
+                mentioned_incumbent=item.get("mentioned_incumbent")
             )
             if inserted_id:
                 total_inserted += 1
 
-    # 2. Hacker News
-    hn_miner = HackerNewsMiner()
-    if HAS_RICH:
-        console.print("[cyan][>] Mining Hacker News Algolia API...[/cyan]")
-    hn_items = hn_miner.search_discussions(query=topic, limit=limit_per_source)
-    total_found += len(hn_items)
-    for item in hn_items:
-        inserted_id = db.insert_raw_item(
-            source="hackernews",
-            source_id=f"hn_{item.get('url', '')}",
-            url=item.get("url", ""),
-            title=item.get("title", ""),
-            content=item.get("content", ""),
-            score=item.get("score", 0),
-            comments_count=item.get("comments_count", 0),
-            topic_query=topic
-        )
-        if inserted_id:
-            total_inserted += 1
+    def run_reddit():
+        reddit_miner = RedditMiner()
+        for sub in subreddits:
+            if HAS_RICH: console.print(f"[cyan][>] Mining Reddit r/{sub}...[/cyan]")
+            items = reddit_miner.search_subreddit(subreddit=sub, query=topic, limit=limit_per_source)
+            for item in items:
+                item["source"] = item.get("source", f"reddit:r/{sub}")
+                item["source_id"] = item.get("source_id", item.get("permalink", ""))
+            insert_items(items, "reddit")
 
-    # 3. Stack Overflow
-    so_miner = StackOverflowMiner()
-    if HAS_RICH:
-        console.print("[cyan][>] Mining Stack Overflow Developer Friction...[/cyan]")
-    so_items = so_miner.search_questions(query=topic, limit=limit_per_source)
-    total_found += len(so_items)
-    for item in so_items:
-        inserted_id = db.insert_raw_item(
-            source="stackoverflow",
-            source_id=item.get("source_id", ""),
-            url=item.get("url", ""),
-            title=item.get("title", ""),
-            content=item.get("content", ""),
-            score=item.get("score", 0),
-            comments_count=item.get("comments_count", 0),
-            topic_query=topic
-        )
-        if inserted_id:
-            total_inserted += 1
+    def run_hn():
+        hn_miner = HackerNewsMiner()
+        if HAS_RICH: console.print("[cyan][>] Mining Hacker News...[/cyan]")
+        items = hn_miner.search_discussions(query=topic, limit=limit_per_source)
+        for item in items:
+            item["source"] = "hackernews"
+            item["source_id"] = f"hn_{item.get('url', '')}"
+        insert_items(items, "hn")
 
-    # 4. GitHub Issues if repos provided
-    if repos:
+    def run_so():
+        so_miner = StackOverflowMiner()
+        if HAS_RICH: console.print("[cyan][>] Mining StackOverflow...[/cyan]")
+        items = so_miner.search_questions(query=topic, limit=limit_per_source)
+        for item in items:
+            item["source"] = "stackoverflow"
+        insert_items(items, "so")
+
+    def run_gh():
+        if not repos: return
         gh_issues_miner = GitHubIssuesMiner()
         for r in repos:
-            if HAS_RICH:
-                console.print(f"[cyan][>] Mining GitHub Issues for {r}...[/cyan]")
-            gh_items = gh_issues_miner.search_issues(repo=r, query="bug OR feature OR complaint OR slow", limit=8)
-            total_found += len(gh_items)
-            for item in gh_items:
-                inserted_id = db.insert_raw_item(
-                    source=item.get("source", f"github:{r}"),
-                    source_id=item.get("source_id", ""),
-                    url=item.get("url", ""),
-                    title=item.get("title", ""),
-                    content=item.get("content", ""),
-                    score=item.get("score", 0),
-                    comments_count=item.get("comments_count", 0),
-                    topic_query=topic
-                )
-                if inserted_id:
-                    total_inserted += 1
+            if HAS_RICH: console.print(f"[cyan][>] Mining GitHub {r}...[/cyan]")
+            items = gh_issues_miner.search_issues(repo=r, query="bug OR feature OR complaint OR slow", limit=8)
+            for item in items:
+                item["source"] = item.get("source", f"github:{r}")
+            insert_items(items, "gh")
 
-    # 5. G2 Incumbent Complaints if incumbents provided
-    if incumbents:
+    def run_g2():
+        if not incumbents: return
         g2_miner = G2Miner()
         for inc in incumbents:
-            if HAS_RICH:
-                console.print(f"[cyan][>] Mining G2 Reviews for {inc}...[/cyan]")
-            g2_items = g2_miner.fetch_incumbent_complaints(product_slug=inc, limit=5)
-            total_found += len(g2_items)
-            for item in g2_items:
-                inserted_id = db.insert_raw_item(
-                    source=item.get("source", f"g2:{inc}"),
-                    source_id=item.get("source_id", ""),
-                    url=item.get("url", ""),
-                    title=item.get("title", ""),
-                    content=item.get("content", ""),
-                    score=item.get("score", 0),
-                    comments_count=item.get("comments_count", 0),
-                    topic_query=topic,
-                    mentioned_incumbent=inc
-                )
-                if inserted_id:
-                    total_inserted += 1
+            if HAS_RICH: console.print(f"[cyan][>] Mining G2 for {inc}...[/cyan]")
+            items = g2_miner.fetch_incumbent_complaints(product_slug=inc, limit=5)
+            for item in items:
+                item["source"] = item.get("source", f"g2:{inc}")
+                item["mentioned_incumbent"] = inc
+            insert_items(items, "g2")
 
-    # 6. Shopify Reviews if shopify_apps provided
-    if shopify_apps:
+    def run_shopify():
+        if not shopify_apps: return
         shopify_miner = ShopifyReviewsMiner()
         for app in shopify_apps:
-            if HAS_RICH:
-                console.print(f"[cyan][>] Mining Shopify App Reviews for '{app}'...[/cyan]")
-            reviews = shopify_miner.fetch_app_reviews(app_slug=app, limit=limit_per_source)
-            total_found += len(reviews)
+            if HAS_RICH: console.print(f"[cyan][>] Mining Shopify {app}...[/cyan]")
+            items = shopify_miner.fetch_app_reviews(app_slug=app, limit=limit_per_source)
+            for item in items:
+                item["source"] = item.get("source", f"shopify:{app}")
+            insert_items(items, "shopify")
 
-    # 7. AlternativeTo if alternativeto provided
-    if alternativeto:
+    def run_alt():
+        if not alternativeto: return
         alt_miner = AlternativeToMiner()
         for alt in alternativeto:
-            if HAS_RICH:
-                console.print(f"[cyan][>] Mining AlternativeTo weaknesses for '{alt}'...[/cyan]")
+            if HAS_RICH: console.print(f"[cyan][>] Mining AlternativeTo {alt}...[/cyan]")
             items = alt_miner.fetch_alternatives(incumbent_name=alt, limit=limit_per_source)
-            total_found += len(items)
+            for item in items:
+                item["source"] = item.get("source", f"alternativeto:{alt}")
+                item["mentioned_incumbent"] = alt
+            insert_items(items, "alt")
 
-    # 8. YouTube Transcripts
-    yt_miner = YouTubeMiner()
-    if HAS_RICH:
-        console.print(f"[cyan][>] Mining YouTube founder/operator discussions for '{topic}'...[/cyan]")
-    yt_items = yt_miner.search_pain_transcripts(query=topic, limit=min(4, limit_per_source))
-    total_found += len(yt_items)
+    def run_youtube():
+        yt_miner = YouTubeMiner()
+        if HAS_RICH: console.print(f"[cyan][>] Mining YouTube for {topic}...[/cyan]")
+        items = yt_miner.search_pain_transcripts(query=topic, limit=min(4, limit_per_source))
+        for item in items:
+            item["source"] = item.get("source", "youtube")
+        insert_items(items, "youtube")
+
+    tasks = [run_reddit, run_hn, run_so, run_gh, run_g2, run_shopify, run_alt, run_youtube]
+    with ThreadPoolExecutor(max_workers=7) as executor:
+        futures = [executor.submit(t) for t in tasks]
+        for f in as_completed(futures):
+            try:
+                f.result()
+            except Exception as e:
+                print(f"[!] Miner failed: {e}")
 
     if HAS_RICH:
-        console.print(f"\n[bold green][+] Scan Complete:[/bold green] Found {total_found} discussions, [bold yellow]{total_inserted} new items[/bold yellow] saved to SQLite database.")
+        console.print(f"\\n[bold green][+] Scan Complete:[/bold green] Found {total_found} discussions, [bold yellow]{total_inserted} new items[/bold yellow] saved to SQLite database.")
     else:
-        print(f"\n[+] Scan Complete: Found {total_found} discussions, {total_inserted} new items saved to SQLite database.")
-
+        print(f"\\n[+] Scan Complete: Found {total_found} discussions, {total_inserted} new items saved to SQLite database.")
 def cmd_extract(limit: int = 50):
     """Processes unextracted raw items and saves structured pain points into SQLite."""
     unextracted = db.get_unextracted_raw_items(limit=limit)
@@ -229,7 +207,7 @@ def cmd_extract(limit: int = 50):
         print(f"Extracting pain points from {len(unextracted)} raw items via LLM...")
 
     extractor = PainExtractor()
-    extracted_pains = extractor.extract_pains_from_items(unextracted, batch_size=3)
+    extracted_pains = extractor.extract_pains_from_items(unextracted, batch_size=10)
 
     if HAS_RICH:
         console.print(f"[bold green][+] Extraction Complete:[/bold green] Saved [bold yellow]{len(extracted_pains)} concrete pain points[/bold yellow] to SQLite.")
@@ -424,6 +402,9 @@ def main():
     top_parser.add_argument("limit", nargs="?", type=int, default=10, help="Number of top ideas to show")
     top_parser.add_argument("--detailed", action="store_true", help="Show full opportunity cards")
 
+    # verify
+    verify_parser = subparsers.add_parser("verify", help="Run verification and output metrics")
+
     # view
     view_parser = subparsers.add_parser("view", help="View deep dossier for a specific idea rank or ID")
     view_parser.add_argument("id", type=int, help="Idea ID or Rank number (e.g. 1)")
@@ -478,6 +459,8 @@ def main():
             min_size=args.min_size,
             min_diversity=args.min_diversity
         )
+    elif args.command == "verify":
+        cmd_verify()
     else:
         # Default Interactive Mode
         print_banner()
@@ -515,6 +498,104 @@ def main():
             custom_topic = input("Enter research topic: ").strip()
             subs = input("Enter subreddits (separated by spaces, e.g. 'saas devops'): ").strip().split()
             cmd_auto(topic=custom_topic, subreddits=subs if subs else None)
+
+def cmd_verify():
+    """Verifies pipeline completion metrics and gates."""
+    import os, json
+    db_path = db.DEFAULT_DB_PATH
+    db.init_db(db_path)
+    
+    with db.get_db(db_path) as conn:
+        cursor = conn.cursor()
+        
+        # 1. Unprocessed items
+        cursor.execute("SELECT COUNT(*) FROM raw_items ri WHERE NOT EXISTS (SELECT 1 FROM pain_points WHERE raw_item_id = ri.id)")
+        unprocessed_items = cursor.fetchone()[0]
+        
+        # 2. Gate funnel
+        cursor.execute("SELECT COUNT(*) FROM clusters")
+        total_clusters = cursor.fetchone()[0]
+        
+        cursor.execute("SELECT id, size, source_diversity, status FROM clusters")
+        clusters = cursor.fetchall()
+        
+        coherence_pass = 0
+        size_pass = 0
+        div_pass = 0
+        
+        for c in clusters:
+            if c["status"] not in ["Error", "coherent=false", "unscoreable"]:
+                coherence_pass += 1
+                if c["size"] >= 8:
+                    size_pass += 1
+                    if c["source_diversity"] >= 2:
+                        div_pass += 1
+        
+        # Now ideas
+        cursor.execute("SELECT id, score_wtp, trend_verdict, name FROM ideas")
+        ideas = cursor.fetchall()
+        
+        wtp_pass = 0
+        trend_pass = 0
+        idea_failures = []
+        
+        for i in ideas:
+            failed_gate = None
+            wtp = i["score_wtp"]
+            trend = i["trend_verdict"]
+            
+            if wtp >= 5:
+                wtp_pass += 1
+                if trend in ["rising", "flat"]:
+                    trend_pass += 1
+                else:
+                    failed_gate = f"trend={trend}"
+            else:
+                failed_gate = f"wtp={wtp}"
+            
+            if failed_gate:
+                idea_failures.append(f"Idea '{i['name']}' (ID {i['id']}) failed on: {failed_gate}")
+            else:
+                idea_failures.append(f"Idea '{i['name']}' (ID {i['id']}) PASSED all gates")
+                
+        funnel_str = f"clusters={total_clusters} -> coherence_pass={coherence_pass} -> size>=8={size_pass} -> diversity>=2={div_pass} -> wtp>=5={wtp_pass} -> trend in (rising,flat)={trend_pass}"
+        
+        artifacts = ["data/intel.db", "data/verify_last.json"]
+        print(f"Unprocessed items: {unprocessed_items}")
+        print(f"Funnel: {funnel_str}")
+        print("\nIdea Gates:")
+        for failure in idea_failures:
+            print(f" - {failure}")
+            
+        print("\nArtifact Checks:")
+        for a in artifacts:
+            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), a)
+            exists = os.path.exists(path)
+            print(f" - {a}: {'EXISTS' if exists else 'MISSING'}")
+            
+        current_stats = {
+            "unprocessed": unprocessed_items,
+            "clusters": total_clusters,
+            "ideas": len(ideas),
+            "funnel_trend_pass": trend_pass
+        }
+        
+        last_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "verify_last.json")
+        if os.path.exists(last_file):
+            with open(last_file, "r") as f:
+                last_stats = json.load(f)
+            print("\nDiff vs Previous Run:")
+            for k in current_stats:
+                diff = current_stats[k] - last_stats.get(k, 0)
+                sign = '+' if diff >= 0 else ''
+                print(f" - {k}: {current_stats[k]} ({sign}{diff})")
+        else:
+            print("\nNo previous verify run found.")
+            
+        os.makedirs(os.path.dirname(last_file), exist_ok=True)
+        with open(last_file, "w") as f:
+            json.dump(current_stats, f)
+
 
 if __name__ == "__main__":
     main()
