@@ -1,7 +1,7 @@
 import os
 import json
 import requests
-from typing import List, Dict, Any, Optional, Type, TypeVar
+from typing import List, Dict, Any, Optional, Type, TypeVar, Literal
 from pydantic import BaseModel
 from dotenv import load_dotenv
 
@@ -15,7 +15,7 @@ class KeyManager:
     """Intelligent multi-provider routing and structured token optimizer (Groq, GitHub, Gemini, OpenRouter)."""
 
     def __init__(self):
-        self.groq_key = os.getenv("GROQ_API_KEY2", "").strip() or os.getenv("GROQ_API_KEY", "").strip()
+        self.groq_key = os.getenv("GROQ_API_KEY", "").strip()
         self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip()
         self.openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
         self.github_token = os.getenv("GITHUB_TOKEN", "").strip()
@@ -48,41 +48,60 @@ class KeyManager:
             f"{prompt[:2000]}"
         )
 
-    def generate_structured(self, prompt: str, response_model: Type[T], system_prompt: Optional[str] = None) -> Optional[T]:
+    def generate_structured(self, prompt: str, response_model: Type[T], system_prompt: Optional[str] = None, task_type: str = "fast_extract", model_tier: Literal['fast','deep'] = 'fast') -> Optional[T]:
         """
         Guaranteed schema-validated generation using instructor + Pydantic models.
-        Cascades through providers on network OR validation errors.
+        Cascades through providers based on model_tier.
         """
         sys_prompt = system_prompt or "You are an elite B2B Market Research & Gap Mining Analyst."
+        
+        if model_tier == "deep":
+            if self.gemini_key:
+                res = self._structured_gemini(prompt, response_model, sys_prompt)
+                if res: 
+                    print(f"[generate_structured] tier: deep, provider: gemini")
+                    return res
+            if self.github_token:
+                res = self._structured_github(prompt, response_model, sys_prompt)
+                if res: 
+                    print(f"[generate_structured] tier: deep, provider: github")
+                    return res
+            if self.openrouter_key:
+                res = self._structured_openrouter(prompt, response_model, sys_prompt)
+                if res: 
+                    print(f"[generate_structured] tier: deep, provider: openrouter")
+                    return res
+            print(f"[generate_structured] tier: deep, all deep providers failed. Falling back to fast tier.")
 
-        # 1. Try Groq via Instructor
+        # Fast cascade (default or fallback)
         if self.groq_key:
             groq_res = self._structured_groq(prompt, response_model, sys_prompt)
             if groq_res is not None:
+                print(f"[generate_structured] tier: fast, provider: groq")
                 return groq_res
 
-        # 2. Try TokenRouter via manual requests (Since Groq is exhausted)
         if self.tokenrouter_key:
             tr_res = self._structured_tokenrouter(prompt, response_model, sys_prompt)
             if tr_res is not None:
+                print(f"[generate_structured] tier: fast, provider: tokenrouter")
                 return tr_res
 
-        # 2. Try GitHub Models via Instructor
         if self.github_token:
             gh_res = self._structured_github(prompt, response_model, sys_prompt)
             if gh_res is not None:
+                print(f"[generate_structured] tier: fast, provider: github")
                 return gh_res
 
-        # 3. Try Gemini via Instructor / JSON Mode
         if self.gemini_key:
             gem_res = self._structured_gemini(prompt, response_model, sys_prompt)
             if gem_res is not None:
+                print(f"[generate_structured] tier: fast, provider: gemini")
                 return gem_res
 
-        # 4. Try OpenRouter via Instructor
         if self.openrouter_key:
             or_res = self._structured_openrouter(prompt, response_model, sys_prompt)
             if or_res is not None:
+                print(f"[generate_structured] tier: fast, provider: openrouter")
                 return or_res
 
         return None
@@ -113,25 +132,39 @@ class KeyManager:
         return None
 
     def _structured_github(self, prompt: str, response_model: Type[T], system_prompt: str) -> Optional[T]:
-        import instructor
-        from openai import OpenAI
+        import json
+        import re
         try:
-            client = instructor.from_openai(
-                OpenAI(base_url="https://models.inference.ai.azure.com", api_key=self.github_token),
-                mode=instructor.Mode.JSON
-            )
-            return client.chat.completions.create(
-                model="gpt-4o",
-                response_model=response_model,
-                messages=[
+            schema_instruction = f"\nYou MUST respond with valid JSON strictly conforming to this Pydantic schema:\n{json.dumps(response_model.model_json_schema())}"
+            payload = {
+                "model": "gpt-4o",
+                "messages": [
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": prompt}
+                    {"role": "user", "content": f"{prompt}\n{schema_instruction}"}
                 ],
-                temperature=0.1,
-                max_retries=1
+                "temperature": 0.1,
+                "max_tokens": 4096
+            }
+
+            res = requests.post(
+                "https://models.inference.ai.azure.com/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {self.github_token}",
+                    "Content-Type": "application/json"
+                },
+                json=payload,
+                timeout=25
             )
-        except Exception:
-            return None
+            if res.status_code == 200:
+                raw_json = res.json()["choices"][0]["message"]["content"]
+                clean_json = re.sub(r'^```json\s*', '', raw_json.strip())
+                clean_json = re.sub(r'\s*```$', '', clean_json.strip())
+                return response_model.model_validate_json(clean_json)
+            else:
+                print(f"Github API Error {res.status_code}: {res.text}")
+        except Exception as e:
+            print(f'Github Error: {e}')
+        return None
 
     def _structured_gemini(self, prompt: str, response_model: Type[T], system_prompt: str) -> Optional[T]:
         try:
@@ -157,8 +190,10 @@ class KeyManager:
                 clean_json = re.sub(r'^```json\s*', '', raw_json.strip())
                 clean_json = re.sub(r'\s*```$', '', clean_json.strip())
                 return response_model.model_validate_json(clean_json)
-        except Exception:
-            pass
+            else:
+                print(f"Gemini API Error {res.status_code}: {res.text}")
+        except Exception as e:
+            print(f'Gemini Error: {e}')
         return None
 
     def _structured_openrouter(self, prompt: str, response_model: Type[T], system_prompt: str) -> Optional[T]:

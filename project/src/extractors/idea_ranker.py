@@ -1,5 +1,6 @@
 import json
 import asyncio
+import re
 from typing import List, Dict, Any, Optional, Tuple, Set
 from pydantic import BaseModel, Field
 from src.key_manager import KeyManager
@@ -164,7 +165,9 @@ class IdeaRanker:
                 self.km.generate_structured,
                 prompt,
                 IdeaProposal,
-                system_prompt
+                system_prompt,
+                task_type="rank",
+                model_tier="deep"
             )
 
         is_valid, invalid_ids = self._validate_citations(proposal, valid_pain_ids)
@@ -181,7 +184,9 @@ class IdeaRanker:
                     self.km.generate_structured,
                     retry_prompt,
                     IdeaProposal,
-                    system_prompt
+                    system_prompt,
+                    task_type="rank",
+                    model_tier="deep"
                 )
             is_valid, invalid_ids = self._validate_citations(proposal, valid_pain_ids)
 
@@ -196,7 +201,9 @@ class IdeaRanker:
             proposal = self.km.generate_structured(
                 prompt=retry_prompt,
                 response_model=IdeaProposal,
-                system_prompt=system_prompt
+                system_prompt=system_prompt,
+                task_type="rank",
+                model_tier="deep"
             )
             is_valid, invalid_ids = self._validate_citations(proposal, valid_pain_ids)
 

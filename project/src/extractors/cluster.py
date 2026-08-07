@@ -84,7 +84,8 @@ class ProblemClusterer:
                     self.km.generate_structured,
                     prompt=prompt,
                     response_model=CoherenceCheck,
-                    system_prompt=system_prompt
+                    system_prompt=system_prompt,
+                    task_type="coherence"
                 )
             return res
         except Exception as e:

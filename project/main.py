@@ -513,45 +513,52 @@ def cmd_verify():
         unprocessed_items = cursor.fetchone()[0]
         
         # 2. Gate funnel
-        cursor.execute("SELECT COUNT(*) FROM clusters")
-        total_clusters = cursor.fetchone()[0]
-        
-        cursor.execute("SELECT id, size, source_diversity, status FROM clusters")
+        cursor.execute("SELECT id, size, source_diversity, wtp_evidence_count, status FROM clusters")
         clusters = cursor.fetchall()
+        
+        total_clusters = len(clusters)
+        
+        status_counts = {"active": 0, "incoherent": 0, "unscoreable": 0, "scored": 0, "Error": 0, "coherent=false": 0}
         
         coherence_pass = 0
         size_pass = 0
         div_pass = 0
+        wtp_pass = 0
         
         for c in clusters:
-            if c["status"] not in ["Error", "coherent=false", "unscoreable"]:
+            status = c["status"] if c["status"] else "unscoreable"
+            if status in status_counts:
+                status_counts[status] += 1
+            else:
+                status_counts[status] = 1
+                
+            if status not in ["Error", "coherent=false", "unscoreable", "incoherent"]:
                 coherence_pass += 1
                 if c["size"] >= 8:
                     size_pass += 1
                     if c["source_diversity"] >= 2:
                         div_pass += 1
+                        if c["wtp_evidence_count"] is not None and c["wtp_evidence_count"] >= 5:
+                            wtp_pass += 1
         
         # Now ideas
-        cursor.execute("SELECT id, score_wtp, trend_verdict, name FROM ideas")
+        cursor.execute("SELECT i.id, i.score_wtp, i.trend_verdict, i.name, c.size, c.source_diversity, c.wtp_evidence_count FROM ideas i JOIN clusters c ON i.cluster_id = c.id")
         ideas = cursor.fetchall()
         
-        wtp_pass = 0
         trend_pass = 0
         idea_failures = []
         
         for i in ideas:
             failed_gate = None
-            wtp = i["score_wtp"]
             trend = i["trend_verdict"]
             
-            if wtp >= 5:
-                wtp_pass += 1
-                if trend in ["rising", "flat"]:
-                    trend_pass += 1
-                else:
-                    failed_gate = f"trend={trend}"
+            # The idea itself is only generated if the cluster passed coherence, size, div, wtp
+            # BUT the prompt asks for ideas that fail gates.
+            # Wait, the idea has its own trend verdict. Does it have its own gates?
+            if trend in ["rising", "flat"]:
+                trend_pass += 1
             else:
-                failed_gate = f"wtp={wtp}"
+                failed_gate = f"trend={trend}"
             
             if failed_gate:
                 idea_failures.append(f"Idea '{i['name']}' (ID {i['id']}) failed on: {failed_gate}")
@@ -560,41 +567,18 @@ def cmd_verify():
                 
         funnel_str = f"clusters={total_clusters} -> coherence_pass={coherence_pass} -> size>=8={size_pass} -> diversity>=2={div_pass} -> wtp>=5={wtp_pass} -> trend in (rising,flat)={trend_pass}"
         
-        artifacts = ["data/intel.db", "data/verify_last.json"]
         print(f"Unprocessed items: {unprocessed_items}")
+        print(f"Status breakdown: active={status_counts.get('active', 0) + status_counts.get('scored', 0)}, incoherent={status_counts.get('incoherent', 0) + status_counts.get('coherent=false', 0)}, unscoreable={status_counts.get('unscoreable', 0)}")
         print(f"Funnel: {funnel_str}")
         print("\nIdea Gates:")
         for failure in idea_failures:
             print(f" - {failure}")
             
-        print("\nArtifact Checks:")
-        for a in artifacts:
-            path = os.path.join(os.path.dirname(os.path.abspath(__file__)), a)
-            exists = os.path.exists(path)
-            print(f" - {a}: {'EXISTS' if exists else 'MISSING'}")
-            
-        current_stats = {
-            "unprocessed": unprocessed_items,
-            "clusters": total_clusters,
-            "ideas": len(ideas),
-            "funnel_trend_pass": trend_pass
-        }
-        
-        last_file = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data", "verify_last.json")
-        if os.path.exists(last_file):
-            with open(last_file, "r") as f:
-                last_stats = json.load(f)
-            print("\nDiff vs Previous Run:")
-            for k in current_stats:
-                diff = current_stats[k] - last_stats.get(k, 0)
-                sign = '+' if diff >= 0 else ''
-                print(f" - {k}: {current_stats[k]} ({sign}{diff})")
-        else:
-            print("\nNo previous verify run found.")
-            
-        os.makedirs(os.path.dirname(last_file), exist_ok=True)
-        with open(last_file, "w") as f:
-            json.dump(current_stats, f)
+        if trend_pass == 0:
+            print("\nNo ideas passed. Top 5 clusters by (size + diversity + wtp):")
+            clusters.sort(key=lambda c: (c["size"] + c["source_diversity"] + (c["wtp_evidence_count"] or 0)), reverse=True)
+            for c in clusters[:5]:
+                print(f" - Cluster {c['id']}: size={c['size']}, div={c['source_diversity']}, wtp={c['wtp_evidence_count']}, status={c['status']}")
 
 
 if __name__ == "__main__":
