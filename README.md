@@ -1,6 +1,21 @@
-# 🚀 MarketGooner
+<div align="center">
+  <img src="assets/logo.png" alt="Logo" width="250" />
+  
+  <h1>MarketGooner</h1>
 
-**MarketGooner** is an autonomous, 100% free-tier B2B market research and gap-mining engine. It is designed to mine customer friction from Reddit, Hacker News, GitHub, and community boards, and synthesize validated Micro-SaaS startup opportunities. 
+  <p>
+    <a href="https://github.com/Nilay-Mehta/MarketGooner"><strong>Website</strong></a> ·
+    <a href="#"><strong>Discord</strong></a> ·
+    <a href="#"><strong>Documentation</strong></a>
+  </p>
+
+  <p>
+    <img alt="Version" src="https://img.shields.io/badge/version-v1.0.0-blue?style=flat-square" />
+    <img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=flat-square" />
+  </p>
+</div>
+
+**MarketGooner** is an autonomous, 100% free-tier B2B market research and gap-mining engine. It is designed to mine customer friction from Reddit, Hacker News, GitHub, and community boards, and synthesize validated Micro-SaaS startup opportunities.
 
 This repository contains two main components:
 1. **The Intelligence Engine (`/project`)**: A Python-based CLI pipeline that scans data sources, extracts explicit pain points, clusters them using BERTopic, and synthetically ranks them for WTP (Willingness-to-Pay), Frequency, Feasibility, and search trends.
@@ -8,7 +23,7 @@ This repository contains two main components:
 
 ---
 
-## 🛠️ Step-by-Step Setup Guide
+## Step-by-Step Setup Guide
 
 Follow these instructions to set up the Python engine and the Obsidian vault locally.
 
@@ -67,7 +82,7 @@ The intelligence engine relies on free LLM APIs (like Groq) to synthesize and sc
 
 ---
 
-## 🚀 Running the Engine
+## Running the Engine
 
 The entire pipeline is driven by the `main.py` CLI script located in the `project/` directory.
 
@@ -101,7 +116,7 @@ python main.py rank
 
 ---
 
-## 🧠 Using the Obsidian Vault
+## Using the Obsidian Vault
 
 The `Market_Intelligence_Vault` folder is a complete knowledge base intended to be viewed in Obsidian.
 
@@ -112,6 +127,6 @@ The `Market_Intelligence_Vault` folder is a complete knowledge base intended to 
 
 ---
 
-## 🛡️ Data & Privacy
+## Data & Privacy
 - **Local SQLite Database**: All scraped data, pain points, and generated ideas are stored strictly locally in `project/data/intel.db`. No proprietary data is sent anywhere other than the stateless LLM API calls.
 - **Git Ignore**: The local `.env` and `data/` directories are securely excluded from version control via `.gitignore`.
