@@ -5,7 +5,7 @@
 
   <p>
     <a href="https://github.com/Nilay-Mehta/MarketGooner"><strong>Website</strong></a> ·
-    <a href="#"><strong>Discord</strong></a> ·
+    <a href="https://discord.gg/bxWHgmNNry"><strong>Discord</strong></a> ·
     <a href="#"><strong>Documentation</strong></a>
   </p>
 
