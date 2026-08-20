@@ -4,7 +4,8 @@
       "Bash(python -c \"import sqlite3; c=sqlite3.connect\\('D:/Start/project/data/intel.db'\\); print\\('TABLES:', [r[0] for r in c.execute\\(\\\\\"select name from sqlite_master where type='table'\\\\\"\\)]\\); print\\('raw_items:', c.execute\\('select count\\(*\\) from raw_items'\\).fetchone\\(\\)[0]\\); print\\('pain_points:', c.execute\\('select count\\(*\\) from pain_points'\\).fetchone\\(\\)[0]\\); print\\('clusters:', c.execute\\('select count\\(*\\) from clusters'\\).fetchone\\(\\)[0]\\); print\\('ideas:', c.execute\\('select count\\(*\\) from ideas'\\).fetchone\\(\\)[0]\\); print\\('source counts:', c.execute\\('select source, count\\(*\\) from raw_items group by source'\\).fetchall\\(\\)\\)\")",
       "Bash(python -c \"import sqlite3; c=sqlite3.connect\\('D:/Start/project/data/intel.db'\\); c.row_factory=sqlite3.Row; print\\('--- IDEAS ---'\\); [print\\(dict\\(r\\)\\) for r in c.execute\\('select * from ideas order by score_total desc'\\)]; print\\('\\\\n--- PAIN POINTS ---'\\); [print\\(dict\\(r\\)\\) for r in c.execute\\('select id, raw_item_id, summary, incumbent, severity from pain_points'\\)]; print\\('\\\\n--- CLUSTERS ---'\\); [print\\(dict\\(r\\)\\) for r in c.execute\\('select * from clusters'\\)]\")",
       "Bash(python -c \"import sqlite3; c=sqlite3.connect\\('D:/Start/project/data/intel.db'\\); print\\('reddit rows:', c.execute\\(\\\\\"select count\\(*\\) from raw_items where source like 'reddit:%'\\\\\"\\).fetchone\\(\\)[0]\\); print\\('sources:', c.execute\\('select source, count\\(*\\) from raw_items group by source'\\).fetchall\\(\\)\\)\")",
-      "Bash(python -c ' *)"
+      "Bash(python -c ' *)",
+      "WebSearch"
     ]
   }
 }
