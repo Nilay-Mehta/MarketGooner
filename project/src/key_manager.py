@@ -21,26 +21,52 @@ class KeyManager:
         self.github_token = os.getenv("GITHUB_TOKEN", "").strip()
         self.tokenrouter_key = None
 
-    def generate_completion(self, prompt: str, task_type: str = "fast_extract", system_prompt: str = "You are an elite Market Research & Gap Identification AI.", json_mode: bool = False) -> str:
-        return self.route_completion(prompt=prompt, task_type=task_type, system_prompt=system_prompt, json_mode=json_mode)
+    def generate_completion(self, prompt: str, task_type: str = "fast_extract", system_prompt: str = "You are an elite Market Research & Gap Identification AI.", json_mode: bool = False, model_tier: Literal['fast','deep'] = 'fast') -> str:
+        return self.route_completion(prompt=prompt, task_type=task_type, system_prompt=system_prompt, json_mode=json_mode, model_tier=model_tier)
 
-    def route_completion(self, prompt: str, task_type: str = "fast_extract", system_prompt: str = "You are an elite Market Research & Gap Identification AI.", json_mode: bool = False) -> str:
+    def route_completion(self, prompt: str, task_type: str = "fast_extract", system_prompt: str = "You are an elite Market Research & Gap Identification AI.", json_mode: bool = False, model_tier: Literal['fast','deep'] = 'fast') -> str:
         """Smart-routes text queries across free tier providers."""
+        if model_tier == "deep":
+            if self.gemini_key:
+                res = self._call_gemini(prompt, system_prompt, json_mode=json_mode)
+                if res: 
+                    print(f"[route_completion] tier: deep, provider: gemini")
+                    return res
+            if self.github_token:
+                res = self._call_github_models(prompt, system_prompt, json_mode=json_mode)
+                if res:
+                    print(f"[route_completion] tier: deep, provider: github")
+                    return res
+            if self.openrouter_key:
+                res = self._call_openrouter(prompt, system_prompt)
+                if res:
+                    print(f"[route_completion] tier: deep, provider: openrouter")
+                    return res
+            print(f"[route_completion] tier: deep, all deep providers failed. Falling back to fast tier.")
+
         if self.groq_key:
             res = self._call_groq(prompt, system_prompt, json_mode=json_mode)
-            if res: return res
+            if res: 
+                print(f"[route_completion] tier: fast, provider: groq")
+                return res
 
         if self.github_token:
             res = self._call_github_models(prompt, system_prompt, json_mode=json_mode)
-            if res: return res
+            if res:
+                print(f"[route_completion] tier: fast, provider: github")
+                return res
 
         if self.gemini_key:
             res = self._call_gemini(prompt, system_prompt, json_mode=json_mode)
-            if res: return res
+            if res:
+                print(f"[route_completion] tier: fast, provider: gemini")
+                return res
 
         if self.openrouter_key:
             res = self._call_openrouter(prompt, system_prompt)
-            if res: return res
+            if res:
+                print(f"[route_completion] tier: fast, provider: openrouter")
+                return res
 
         return (
             "> [!NOTE]\n"
