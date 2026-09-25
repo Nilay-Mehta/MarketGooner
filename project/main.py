@@ -32,7 +32,6 @@ from src.miners.hn_miner import HackerNewsMiner
 from src.miners.github_miner import GitHubMiner
 from src.miners.github_issues_miner import GitHubIssuesMiner
 from src.miners.stackoverflow_miner import StackOverflowMiner
-from src.miners.g2_miner import G2Miner
 from src.miners.shopify_reviews_miner import ShopifyReviewsMiner
 from src.miners.alternativeto_miner import AlternativeToMiner
 from src.miners.youtube_miner import YouTubeMiner
@@ -141,17 +140,6 @@ def cmd_scan(
                 item["source"] = item.get("source", f"github:{r}")
             insert_items(items, "gh")
 
-    def run_g2():
-        if not incumbents: return
-        g2_miner = G2Miner()
-        for inc in incumbents:
-            if HAS_RICH: console.print(f"[cyan][>] Mining G2 for {inc}...[/cyan]")
-            items = g2_miner.fetch_incumbent_complaints(product_slug=inc, limit=5)
-            for item in items:
-                item["source"] = item.get("source", f"g2:{inc}")
-                item["mentioned_incumbent"] = inc
-            insert_items(items, "g2")
-
     def run_shopify():
         if not shopify_apps: return
         shopify_miner = ShopifyReviewsMiner()
@@ -181,7 +169,7 @@ def cmd_scan(
             item["source"] = item.get("source", "youtube")
         insert_items(items, "youtube")
 
-    tasks = [run_reddit, run_hn, run_so, run_gh, run_g2, run_shopify, run_alt, run_youtube]
+    tasks = [run_reddit, run_hn, run_so, run_gh, run_shopify, run_alt, run_youtube]
     with ThreadPoolExecutor(max_workers=7) as executor:
         futures = [executor.submit(t) for t in tasks]
         for f in as_completed(futures):

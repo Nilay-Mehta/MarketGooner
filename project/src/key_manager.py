@@ -194,7 +194,7 @@ class KeyManager:
 
     def _structured_gemini(self, prompt: str, response_model: Type[T], system_prompt: str) -> Optional[T]:
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.gemini_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={self.gemini_key}"
             schema_instruction = f"\nYou MUST respond with valid JSON strictly conforming to this Pydantic schema:\n{json.dumps(response_model.model_json_schema())}"
             res = requests.post(
                 url,
@@ -336,7 +336,7 @@ class KeyManager:
 
     def _call_gemini(self, prompt: str, system_prompt: str, json_mode: bool = False) -> Optional[str]:
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key={self.gemini_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={self.gemini_key}"
             gen_config = {"temperature": 0.2, "maxOutputTokens": 4096}
             if json_mode:
                 gen_config["responseMimeType"] = "application/json"
