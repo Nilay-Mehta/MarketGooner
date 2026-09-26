@@ -1,4 +1,5 @@
 import os
+from src.orchestration.budget_manager import BudgetManager, RateLimitExceededError
 import json
 import requests
 from typing import List, Dict, Any, Optional, Type, TypeVar, Literal
@@ -20,6 +21,14 @@ class KeyManager:
         self.openrouter_key = os.getenv("OPENROUTER_API_KEY", "").strip()
         self.github_token = os.getenv("GITHUB_TOKEN", "").strip()
         self.tokenrouter_key = None
+        
+        self.budget = BudgetManager(limits={
+            "groq": {"rpm": 30, "tpm": 6000},
+            "gemini": {"rpm": 15, "tpm": 1000000},
+            "github": {"rpm": 15, "tpm": 40000},
+            "openrouter": {"rpm": 20, "tpm": 40000},
+            "tokenrouter": {"rpm": 10, "tpm": 40000}
+        })
 
     def generate_completion(self, prompt: str, task_type: str = "fast_extract", system_prompt: str = "You are an elite Market Research & Gap Identification AI.", json_mode: bool = False, model_tier: Literal['fast','deep'] = 'fast') -> str:
         return self.route_completion(prompt=prompt, task_type=task_type, system_prompt=system_prompt, json_mode=json_mode, model_tier=model_tier)
@@ -278,6 +287,8 @@ class KeyManager:
         return None
 
     def _call_groq(self, prompt: str, system_prompt: str, json_mode: bool = False) -> Optional[str]:
+        if hasattr(self, "budget") and not self.budget.can_proceed("groq"):
+            raise RateLimitExceededError("Rate limit exceeded for provider: groq")
         models = ["llama-3.1-8b-instant", "llama-3.3-70b-versatile", "gemma2-9b-it"]
         for model in models:
             try:
@@ -300,12 +311,15 @@ class KeyManager:
                     timeout=20
                 )
                 if res.status_code == 200:
+                    if hasattr(self, "budget"): self.budget.consume("groq", tokens_used=1000)
                     return res.json()["choices"][0]["message"]["content"]
             except Exception:
                 continue
         return None
 
     def _call_github_models(self, prompt: str, system_prompt: str, json_mode: bool = False) -> Optional[str]:
+        if hasattr(self, "budget") and not self.budget.can_proceed("github"):
+            raise RateLimitExceededError("Rate limit exceeded for provider: github")
         try:
             payload = {
                 "model": "gpt-4o",
@@ -329,12 +343,15 @@ class KeyManager:
                 timeout=25
             )
             if res.status_code == 200:
+                if hasattr(self, "budget"): self.budget.consume("github", tokens_used=1000)
                 return res.json()["choices"][0]["message"]["content"]
         except Exception:
             pass
         return None
 
     def _call_gemini(self, prompt: str, system_prompt: str, json_mode: bool = False) -> Optional[str]:
+        if hasattr(self, "budget") and not self.budget.can_proceed("gemini"):
+            raise RateLimitExceededError("Rate limit exceeded for provider: gemini")
         try:
             url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={self.gemini_key}"
             gen_config = {"temperature": 0.2, "maxOutputTokens": 4096}
@@ -353,12 +370,15 @@ class KeyManager:
                 timeout=25
             )
             if res.status_code == 200:
+                if hasattr(self, "budget"): self.budget.consume("gemini", tokens_used=1000)
                 return res.json()["candidates"][0]["content"]["parts"][0]["text"]
         except Exception:
             pass
         return None
 
     def _call_openrouter(self, prompt: str, system_prompt: str) -> Optional[str]:
+        if hasattr(self, "budget") and not self.budget.can_proceed("openrouter"):
+            raise RateLimitExceededError("Rate limit exceeded for provider: openrouter")
         free_models = [
             "google/gemma-4-26b-a4b-it:free",
             "google/gemma-4-31b-it:free",
@@ -385,6 +405,7 @@ class KeyManager:
                     timeout=25
                 )
                 if res.status_code == 200:
+                    if hasattr(self, "budget"): self.budget.consume("openrouter", tokens_used=1000)
                     return res.json()["choices"][0]["message"]["content"]
             except Exception:
                 continue
