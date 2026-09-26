@@ -1,6 +1,10 @@
 import time
 from typing import Dict, Any
 
+class RateLimitExceededError(Exception):
+    """Raised when a provider hits its RPM or TPM limits."""
+    pass
+
 class BudgetManager:
     """
     Tracks and enforces rate limits (Requests Per Minute and Tokens Per Minute)
