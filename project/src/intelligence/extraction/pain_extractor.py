@@ -1,155 +1,78 @@
-import json
-import time
-from typing import List, Dict, Any, Optional, Literal
+import uuid
+from typing import List, Optional, Literal
 from pydantic import BaseModel, Field
+
 from src.orchestration.router.model_router import ModelRouter
-from src.storage import db
+from src.storage.db import StorageManager, Evidence, PainPoint
 
-class PainPoint(BaseModel):
-    summary: str = Field(..., max_length=500, description="Clear summary of user complaint")
-    incumbent: Optional[str] = Field(None, description="Incumbent product mentioned or None")
-    severity: Literal["annoyance", "blocker", "financial_bleed"] = Field("annoyance", description="Severity level")
-    willingness_to_pay: str = Field("unknown", description="'$X/mo mentioned', 'would switch from Y', or 'unknown'")
-    wtp_type: Literal["explicit_dollar", "switching", "time_cost", "incumbent_pricing", "unknown"] = Field("unknown", description="Categorize the WTP evidence type")
-    persona: str = Field("unknown", description="User persona or role")
-    quote: str = Field(..., max_length=2000, description="Verbatim snippet from the content")
-
-class ItemExtraction(BaseModel):
-    item_id: int
-    has_pain: bool
-    pains: List[PainPoint] = []
-
-class BatchExtractionResponse(BaseModel):
-    items: List[ItemExtraction] = []
+# Intermediate LLM Schema (Optimized for AI to output)
+class ExtractedPain(BaseModel):
+    has_pain: bool = Field(description="Is there a legitimate complaint, problem, or pain point in this text?")
+    problem: str = Field(default="", description="The core problem described (if has_pain is true)")
+    affected_user: str = Field(default="", description="The specific user persona experiencing the pain")
+    category: str = Field(default="", description="High-level category (e.g., 'Inventory Management', 'DevOps')")
+    severity: int = Field(default=1, description="1-10 severity score based on the frustration level")
+    workaround: Optional[str] = Field(None, description="What the user is doing to manually solve it right now")
 
 class PainExtractor:
     """
-    Stage 1 Extractor: Analyzes raw scraped discussions in batches to extract
-    concrete, verifiable B2B friction, incumbent complaints, and willingness to pay using instructor.
+    Intelligence Stage 2: Analyzes canonical Evidence objects using the ModelRouter.
+    Extracts structured PainPoints and saves them to the StorageManager.
     """
 
-    def __init__(self, key_manager: Optional[ModelRouter] = None, db_path: str = db.DEFAULT_DB_PATH):
-        self.km = key_manager or ModelRouter()
-        self.db_path = db_path
+    def __init__(self, router: Optional[ModelRouter] = None, storage: Optional[StorageManager] = None):
+        self.router = router or ModelRouter()
+        self.storage = storage or StorageManager()
 
-    def extract_pains_from_items(self, raw_items: List[Dict[str, Any]], batch_size: int = 5) -> List[Dict[str, Any]]:
+    def process_evidence(self, evidence_list: List[Evidence]) -> List[PainPoint]:
         """
-        Processes a list of raw_items in batches of 5.
-        Extracts pains, saves them into the SQLite pain_points table, and returns extracted records.
+        Processes a list of Evidence objects one by one (or in batches eventually).
+        Saves successfully extracted PainPoints to the database.
         """
-        from collections import defaultdict
-        all_extracted_pains = []
-        batch_map = {item.get("id"): item for item in raw_items if item.get("id")}
+        extracted_pains = []
         
-        items_processed = 0
-        total_items = len(raw_items)
-        failed_items = 0
-        failure_reasons = defaultdict(int)
+        system_prompt = (
+            "You are an expert B2B Market Research AI. "
+            "Your task is to analyze user discussions and extract strictly verified customer friction, complaints, or problems. "
+            "If the user is not complaining or describing a problem, set 'has_pain' to false."
+        )
 
-        for batch_idx, i in enumerate(range(0, len(raw_items), batch_size)):
-            batch = raw_items[i:i + batch_size]
+        for ev in evidence_list:
+            print(f"  [extract] Analyzing Evidence: {ev.id}")
             
-            if items_processed > 0 and items_processed % 15 == 0:
-                print(f"  [extract] {items_processed}/{total_items} done, {len(all_extracted_pains)} pains extracted, {failed_items} failures skipped", flush=True)
-                
-            items_processed += len(batch)
-            batch_prompt = self._build_batch_prompt(batch)
+            prompt = f"Analyze the following user post from {ev.source}:\n\n{ev.text[:2500]}"
             
-            system_prompt = (
-                "You are an expert customer feedback and market research analyst. "
-                "Your task is to analyze user discussions from Reddit, Hacker News, G2, GitHub, Shopify Reviews, and YouTube. "
-                "Extract specific, verifiable customer pain points, incumbent complaints, and willingness to pay (WTP). "
-                "Look for implicit WTP signals and categorize them into wtp_type:\n"
-                "- explicit_dollar: '$15k/month bill', 'paying too much'\n"
-                "- switching: 'switched away because pricing', 'looking for alternative'\n"
-                "- time_cost: 'wasting 10 hours a week on this', 'ROI doesn\\'t justify the time'\n"
-                "- incumbent_pricing: 'Datadog is too expensive', 'pricing model is predatory'\n"
-                "- unknown: no WTP signals detected.\n"
-                "CRITICAL: The quote MUST be an exact verbatim substring (<= 200 chars) from the content of that specific item_id. "
-                "Never hallucinate complaints that are not in the provided text."
-            )
-
             try:
-                structured_res = self.km.generate_structured(
-                    prompt=batch_prompt,
-                    response_model=BatchExtractionResponse,
-                    system_prompt=system_prompt
+                # Use the Extraction Model capability of the Router
+                result = self.router.generate_structured(
+                    prompt=prompt,
+                    response_model=ExtractedPain,
+                    system_prompt=system_prompt,
+                    task_type="fast_extract",
+                    model_tier="fast"
                 )
                 
-                if not structured_res or not structured_res.items:
-                    failed_items += len(batch)
-                    failure_reasons["empty_or_null_response"] += len(batch)
-                    time.sleep(2)
-                    continue
-
-                for item_result in structured_res.items:
-                    item_id = item_result.item_id
-                    raw_item = batch_map.get(item_id)
-                    if not raw_item or not item_result.has_pain:
-                        continue
-
-                    for p in item_result.pains:
-                        summary = p.summary.strip()
-                        quote = p.quote.strip()[:200]
-                        
-                        if not summary or not quote or len(quote) < 6:
-                            continue
-
-                        incumbent = p.incumbent
-                        if incumbent in ["null", "None", "none", "", "null (or name)"]:
-                            incumbent = None
-
-                        pain_id = db.insert_pain_point(
-                            raw_item_id=item_id,
-                            summary=summary,
-                            incumbent=incumbent,
-                            severity=p.severity,
-                            willingness_to_pay=p.willingness_to_pay,
-                            wtp_type=p.wtp_type,
-                            persona=p.persona,
-                            quote=quote,
-                            db_path=self.db_path
-                        )
-
-                        all_extracted_pains.append({
-                            "id": pain_id,
-                            "raw_item_id": item_id,
-                            "summary": summary,
-                            "incumbent": incumbent,
-                            "severity": p.severity,
-                            "willingness_to_pay": p.willingness_to_pay,
-                            "wtp_type": p.wtp_type,
-                            "persona": p.persona,
-                            "quote": quote
-                        })
+                if result and result.has_pain and len(result.problem) > 10:
+                    # Map the LLM output to our Canonical PainPoint Schema
+                    pain_point = PainPoint(
+                        id=f"pp_{uuid.uuid4().hex[:8]}",
+                        problem=result.problem,
+                        affected_user=result.affected_user,
+                        category=result.category,
+                        severity=result.severity,
+                        workaround=result.workaround,
+                        evidence_ids=[ev.id]
+                    )
+                    
+                    # Save to DB
+                    self.storage.save_pain_point(pain_point)
+                    extracted_pains.append(pain_point)
+                    print(f"    -> Extracted Pain: {pain_point.problem[:50]}...")
+                else:
+                    print("    -> No actionable pain detected.")
+                    
             except Exception as e:
-                failed_items += len(batch)
-                failure_reasons[str(e)[:50]] += len(batch)
+                print(f"    -> [!] Extraction failed for {ev.id}: {e}")
 
-            time.sleep(2)
-
-        print(f"  [extract] Final summary: total={total_items} succeeded={total_items - failed_items} failed={failed_items} — new pains created={len(all_extracted_pains)}")
-        if failed_items > 0:
-            print("  [extract] Failure reasons:")
-            for reason, count in failure_reasons.items():
-                print(f"    - {count} items failed due to: {reason}")
-                
-        return all_extracted_pains
-
-    def _build_batch_prompt(self, batch: List[Dict[str, Any]]) -> str:
-        """Constructs a strict JSON extraction prompt for a batch of raw items."""
-        items_payload = []
-        for item in batch:
-            items_payload.append({
-                "item_id": item.get("id"),
-                "title": item.get("title", ""),
-                "source": item.get("source", ""),
-                "content": (item.get("content") or item.get("selftext") or "")[:1500]
-            })
-
-        return f"""
-Analyze the following user discussions and extract real customer friction, complaints, or problems.
-
-DISCUSSIONS TO ANALYZE:
-{json.dumps(items_payload, indent=2)}
-"""
+        print(f"\n[PainExtractor] Finished processing {len(evidence_list)} evidence items. Generated {len(extracted_pains)} PainPoints.")
+        return extracted_pains
