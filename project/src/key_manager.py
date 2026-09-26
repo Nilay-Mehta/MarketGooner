@@ -1,4 +1,5 @@
 import os
+import time
 from src.orchestration.budget_manager import BudgetManager, RateLimitExceededError
 import json
 import requests
@@ -31,7 +32,14 @@ class KeyManager:
         })
 
     def generate_completion(self, prompt: str, task_type: str = "fast_extract", system_prompt: str = "You are an elite Market Research & Gap Identification AI.", json_mode: bool = False, model_tier: Literal['fast','deep'] = 'fast') -> str:
-        return self.route_completion(prompt=prompt, task_type=task_type, system_prompt=system_prompt, json_mode=json_mode, model_tier=model_tier)
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                return self.route_completion(prompt=prompt, task_type=task_type, system_prompt=system_prompt, json_mode=json_mode, model_tier=model_tier)
+            except RateLimitExceededError as e:
+                print(f"\\n[budget_manager] {e}. Pausing for 60 seconds... (Attempt {attempt+1}/{max_retries})")
+                time.sleep(60)
+        raise RateLimitExceededError("Max retries exceeded due to rate limits.")
 
     def route_completion(self, prompt: str, task_type: str = "fast_extract", system_prompt: str = "You are an elite Market Research & Gap Identification AI.", json_mode: bool = False, model_tier: Literal['fast','deep'] = 'fast') -> str:
         """Smart-routes text queries across free tier providers."""
@@ -84,6 +92,16 @@ class KeyManager:
         )
 
     def generate_structured(self, prompt: str, response_model: Type[T], system_prompt: Optional[str] = None, task_type: str = "fast_extract", model_tier: Literal['fast','deep'] = 'fast') -> Optional[T]:
+        max_retries = 3
+        for attempt in range(max_retries):
+            try:
+                return self._generate_structured_internal(prompt, response_model, system_prompt, task_type, model_tier)
+            except RateLimitExceededError as e:
+                print(f"\n[budget_manager] {e}. Pausing for 60 seconds... (Attempt {attempt+1}/{max_retries})")
+                time.sleep(60)
+        raise RateLimitExceededError("Max retries exceeded due to rate limits.")
+
+    def _generate_structured_internal(self, prompt: str, response_model: Type[T], system_prompt: Optional[str] = None, task_type: str = "fast_extract", model_tier: Literal['fast','deep'] = 'fast') -> Optional[T]:
         """
         Guaranteed schema-validated generation using instructor + Pydantic models.
         Cascades through providers based on model_tier.
