@@ -3,7 +3,7 @@ import asyncio
 import re
 from typing import List, Dict, Any, Optional, Tuple, Set
 from pydantic import BaseModel, Field
-from src.key_manager import KeyManager
+from src.orchestration.router.model_router import ModelRouter
 from src.storage import db
 from src.config import RANK_SEMAPHORE_LIMIT
 
@@ -29,8 +29,8 @@ class IdeaRanker:
     and scores opportunities based strictly on verified pain points using instructor.
     """
 
-    def __init__(self, key_manager: Optional[KeyManager] = None, db_path: str = db.DEFAULT_DB_PATH):
-        self.km = key_manager or KeyManager()
+    def __init__(self, key_manager: Optional[ModelRouter] = None, db_path: str = db.DEFAULT_DB_PATH):
+        self.km = key_manager or ModelRouter()
         self.db_path = db_path
         self.semaphore = asyncio.Semaphore(RANK_SEMAPHORE_LIMIT)
 

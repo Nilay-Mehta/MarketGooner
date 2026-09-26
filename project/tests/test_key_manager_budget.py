@@ -1,11 +1,11 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from src.key_manager import KeyManager
-from src.orchestration.budget_manager import BudgetManager, RateLimitExceededError
+from src.orchestration.router.model_router import ModelRouter
+from src.orchestration.budget.budget_manager import BudgetManager, RateLimitExceededError
 
 @pytest.fixture
 def km():
-    km = KeyManager()
+    km = ModelRouter()
     km.groq_key = "test_groq"
     # Set up a budget manager that explicitly blocks 'groq'
     km.budget = BudgetManager(limits={"groq": {"rpm": 0, "tpm": 0}})
@@ -22,7 +22,7 @@ def test_keymanager_raises_error_when_budget_exceeded(mock_sleep, km):
         assert mock_sleep.call_count == 3
 
 def test_keymanager_consumes_budget_on_success():
-    km = KeyManager()
+    km = ModelRouter()
     km.groq_key = "test_groq"
     km.budget = BudgetManager(limits={"groq": {"rpm": 10, "tpm": 1000}})
     
@@ -41,7 +41,7 @@ def test_keymanager_consumes_budget_on_success():
 
 @patch('src.key_manager.time.sleep')
 def test_keymanager_retries_on_rate_limit(mock_sleep):
-    km = KeyManager()
+    km = ModelRouter()
     km.groq_key = "test_groq"
     km.budget = BudgetManager(limits={"groq": {"rpm": 10, "tpm": 1000}})
     

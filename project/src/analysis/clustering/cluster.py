@@ -5,7 +5,7 @@ from typing import List, Dict, Any, Optional
 from collections import defaultdict, Counter
 import random
 from pydantic import BaseModel, Field
-from src.key_manager import KeyManager
+from src.orchestration.router.model_router import ModelRouter
 from src.storage import db
 from src.config import RANK_SEMAPHORE_LIMIT
 
@@ -31,8 +31,8 @@ class ProblemClusterer:
       - Never silently swallows an ImportError on BERTopic.
     """
 
-    def __init__(self, key_manager: Optional[KeyManager] = None, db_path: str = db.DEFAULT_DB_PATH):
-        self.km = key_manager or KeyManager()
+    def __init__(self, key_manager: Optional[ModelRouter] = None, db_path: str = db.DEFAULT_DB_PATH):
+        self.km = key_manager or ModelRouter()
         self.db_path = db_path
         self.semaphore = asyncio.Semaphore(RANK_SEMAPHORE_LIMIT)
 

@@ -2,7 +2,7 @@ import json
 import time
 from typing import List, Dict, Any, Optional, Literal
 from pydantic import BaseModel, Field
-from src.key_manager import KeyManager
+from src.orchestration.router.model_router import ModelRouter
 from src.storage import db
 
 class PainPoint(BaseModel):
@@ -28,8 +28,8 @@ class PainExtractor:
     concrete, verifiable B2B friction, incumbent complaints, and willingness to pay using instructor.
     """
 
-    def __init__(self, key_manager: Optional[KeyManager] = None, db_path: str = db.DEFAULT_DB_PATH):
-        self.km = key_manager or KeyManager()
+    def __init__(self, key_manager: Optional[ModelRouter] = None, db_path: str = db.DEFAULT_DB_PATH):
+        self.km = key_manager or ModelRouter()
         self.db_path = db_path
 
     def extract_pains_from_items(self, raw_items: List[Dict[str, Any]], batch_size: int = 5) -> List[Dict[str, Any]]:

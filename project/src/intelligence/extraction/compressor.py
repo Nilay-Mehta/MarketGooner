@@ -1,6 +1,6 @@
 import re
 from typing import Optional
-from .key_manager import KeyManager
+from .key_manager import ModelRouter
 
 EXTRACTION_PROMPT = """You are a high-speed token compression engine for market intelligence.
 Extract ONLY:
@@ -18,7 +18,7 @@ class TokenCompressor:
     """Compresses massive raw web/forum data off-context to save 95%+ of LLM tokens."""
 
     def __init__(self):
-        self.km = KeyManager()
+        self.km = ModelRouter()
 
     def compress(self, raw_text: str, topic: str = "") -> str:
         """Compresses raw text using fast Groq/Gemini background extraction or local heuristic."""

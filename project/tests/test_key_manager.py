@@ -1,10 +1,10 @@
 import pytest
 from unittest.mock import patch, MagicMock
-from src.key_manager import KeyManager
+from src.orchestration.router.model_router import ModelRouter
 
 @pytest.fixture
 def km():
-    km = KeyManager()
+    km = ModelRouter()
     km.groq_key = "test_groq"
     km.gemini_key = "test_gemini"
     km.github_token = "test_github"

@@ -3,7 +3,7 @@ import time
 from unittest.mock import patch
 
 # We are importing the BudgetManager which we haven't built yet
-from src.orchestration.budget_manager import BudgetManager
+from src.orchestration.budget.budget_manager import BudgetManager
 
 def test_budget_manager_initialization():
     limits = {"groq": {"rpm": 30, "tpm": 6000}}
