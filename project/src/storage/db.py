@@ -92,7 +92,26 @@ class StorageManager:
                     evidence_ids TEXT
                 )
             ''')
-            # Future tables: clusters, opportunities, etc.
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS clusters (
+                    id TEXT PRIMARY KEY,
+                    canonical_problem TEXT,
+                    pain_point_ids TEXT,
+                    unique_users INTEGER,
+                    source_diversity INTEGER,
+                    growth_signal REAL
+                )
+            ''')
+            conn.execute('''
+                CREATE TABLE IF NOT EXISTS opportunities (
+                    id TEXT PRIMARY KEY,
+                    cluster_id TEXT,
+                    concept TEXT,
+                    target_customer TEXT,
+                    existing_alternatives TEXT,
+                    commercial_relevance INTEGER
+                )
+            ''')
             conn.commit()
 
     def save_evidence(self, ev: Evidence):
@@ -109,4 +128,20 @@ class StorageManager:
                 INSERT OR IGNORE INTO pain_points (id, problem, affected_user, category, severity, workaround, evidence_ids)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ''', (pp.id, pp.problem, pp.affected_user, pp.category, pp.severity, pp.workaround, json.dumps(pp.evidence_ids)))
+            conn.commit()
+            
+    def save_cluster(self, cluster: ProblemCluster):
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute('''
+                INSERT OR REPLACE INTO clusters (id, canonical_problem, pain_point_ids, unique_users, source_diversity, growth_signal)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (cluster.id, cluster.canonical_problem, json.dumps(cluster.pain_point_ids), cluster.unique_users, cluster.source_diversity, cluster.growth_signal))
+            conn.commit()
+            
+    def save_opportunity(self, opp: Opportunity):
+        with sqlite3.connect(self.db_path) as conn:
+            conn.execute('''
+                INSERT OR REPLACE INTO opportunities (id, cluster_id, concept, target_customer, existing_alternatives, commercial_relevance)
+                VALUES (?, ?, ?, ?, ?, ?)
+            ''', (opp.id, opp.cluster_id, opp.concept, opp.target_customer, json.dumps(opp.existing_alternatives), opp.commercial_relevance))
             conn.commit()
