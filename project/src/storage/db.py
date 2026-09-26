@@ -68,7 +68,7 @@ class StorageManager:
         self._init_db()
 
     def _init_db(self):
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, uri=True) as conn:
             conn.execute('''
                 CREATE TABLE IF NOT EXISTS evidence (
                     id TEXT PRIMARY KEY,
@@ -115,7 +115,7 @@ class StorageManager:
             conn.commit()
 
     def save_evidence(self, ev: Evidence):
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, uri=True) as conn:
             conn.execute('''
                 INSERT OR IGNORE INTO evidence (id, source, source_id, url, timestamp, author, text, metadata)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?)
@@ -123,7 +123,7 @@ class StorageManager:
             conn.commit()
             
     def save_pain_point(self, pp: PainPoint):
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, uri=True) as conn:
             conn.execute('''
                 INSERT OR IGNORE INTO pain_points (id, problem, affected_user, category, severity, workaround, evidence_ids)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -131,7 +131,7 @@ class StorageManager:
             conn.commit()
             
     def save_cluster(self, cluster: ProblemCluster):
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, uri=True) as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO clusters (id, canonical_problem, pain_point_ids, unique_users, source_diversity, growth_signal)
                 VALUES (?, ?, ?, ?, ?, ?)
@@ -139,7 +139,7 @@ class StorageManager:
             conn.commit()
             
     def save_opportunity(self, opp: Opportunity):
-        with sqlite3.connect(self.db_path) as conn:
+        with sqlite3.connect(self.db_path, uri=True) as conn:
             conn.execute('''
                 INSERT OR REPLACE INTO opportunities (id, cluster_id, concept, target_customer, existing_alternatives, commercial_relevance)
                 VALUES (?, ?, ?, ?, ?, ?)
