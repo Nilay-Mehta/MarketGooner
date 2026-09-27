@@ -159,7 +159,7 @@ class ModelRouter:
         import json
         try:
             schema_instruction = f"\\nYou MUST respond with valid JSON strictly conforming to this Pydantic schema:\\n{json.dumps(response_model.model_json_schema())}"
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={self.gemini_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.gemini_key}"
             res = requests.post(
                 url,
                 headers={"Content-Type": "application/json"},
@@ -183,7 +183,7 @@ class ModelRouter:
         if not self.budget.can_proceed("gemini"):
             raise RateLimitExceededError("Rate limit exceeded for provider: gemini")
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-3.8-flash:generateContent?key={self.gemini_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.gemini_key}"
             gen_config = {"temperature": 0.2, "maxOutputTokens": 4096}
             if json_mode:
                 gen_config["responseMimeType"] = "application/json"
