@@ -18,72 +18,89 @@ def ingest_reddit(subreddit: str, query: str, limit: int):
     print(f"=== INGESTING REDDIT: r/{subreddit} ===")
     db = StorageManager()
     miner = RedditMiner()
-    
     evidence_list = miner.fetch_evidence(subreddit=subreddit, query=query, limit=limit)
-    for ev in evidence_list:
-        db.save_evidence(ev)
-        
-    print(f"\n✅ Ingestion Complete: Saved {len(evidence_list)} posts to DB.")
+    for ev in evidence_list: db.save_evidence(ev)
+    print(f"✅ Ingestion Complete: Saved {len(evidence_list)} posts to DB.")
 
 def extract_pains():
     print("=== EXTRACTING PAIN POINTS ===")
     router = ModelRouter()
     db = StorageManager()
-    
-    # We should grab un-processed evidence from DB, but for now we'll mock pulling all
-    # TODO: Add `get_unprocessed_evidence()` to db.py
-    print("Warning: Fetching unprocessed evidence is pending DB method update.")
-    print("Run `eval_ground_truth.py` for extraction testing.")
-
-def run_pipeline():
-    """Run the entire end-to-end mock flow for testing."""
-    print("=== RUNNING FULL VERTICAL SLICE ===")
-    router = ModelRouter()
-    db = StorageManager()
-    
-    miner = RedditMiner()
-    evidence_list = miner.fetch_evidence(subreddit="smallbusiness", query="software", limit=3)
-    for ev in evidence_list: db.save_evidence(ev)
-        
+    evidence_list = db.get_unprocessed_evidence(limit=50)
+    if not evidence_list:
+        print("No unprocessed evidence found.")
+        return
     extractor = PainExtractor(router=router, storage=db)
     pain_points = extractor.process_evidence(evidence_list)
-    
-    cluster_engine = ClusteringEngine(router=router, storage=db)
-    clusters = cluster_engine.build_clusters(pain_points)
-    
-    opp_engine = OpportunityEngine(router=router, storage=db)
+    print(f"✅ Extraction Complete: Generated {len(pain_points)} pain points.")
+
+def cluster_pains():
+    print("=== CLUSTERING PAIN POINTS ===")
+    router = ModelRouter()
+    db = StorageManager()
+    pain_points = db.get_unclustered_pain_points()
+    if not pain_points:
+        print("No unclustered pain points found.")
+        return
+    engine = ClusteringEngine(router=router, storage=db)
+    clusters = engine.build_clusters(pain_points)
+    print(f"✅ Clustering Complete: Built {len(clusters)} clusters.")
+
+def evaluate_opportunities():
+    print("=== EVALUATING OPPORTUNITIES ===")
+    router = ModelRouter()
+    db = StorageManager()
+    clusters = db.get_unevaluated_clusters()
+    if not clusters:
+        print("No unevaluated clusters found.")
+        return
+    engine = OpportunityEngine(router=router, storage=db)
     opportunities = []
     for cluster in clusters:
-        opp = opp_engine.evaluate_cluster(cluster)
+        opp = engine.evaluate_cluster(cluster)
         if opp: opportunities.append(opp)
+    print(f"✅ Evaluation Complete: Found {len(opportunities)} viable opportunities.")
 
+def diffuse_dossiers():
+    print("=== GENERATING DOSSIERS ===")
+    router = ModelRouter()
+    db = StorageManager()
+    opportunities = db.get_opportunities()
+    if not opportunities:
+        print("No opportunities found.")
+        return
     diffusion = DiffusionEngine(router=router)
     for opp in opportunities:
         diffusion.generate_dossier(opp)
-    
-    print("\n✅ PIPELINE FINISHED")
+    print("✅ Diffusion Complete.")
 
 def main():
     parser = argparse.ArgumentParser(description="Market Intelligence Pipeline CLI")
     subparsers = parser.add_subparsers(dest="command", required=True)
     
-    # Run full test
-    subparsers.add_parser("test-pipeline", help="Runs the full vertical slice test")
-    
-    # Ingestion
     ingest_parser = subparsers.add_parser("mine", help="Mine data from a source")
     ingest_parser.add_argument("source", choices=["reddit"], help="Source to mine")
-    ingest_parser.add_argument("--subreddit", required=True, help="Target subreddit (e.g., smallbusiness)")
-    ingest_parser.add_argument("--query", default="", help="Search query (e.g., software sucks)")
-    ingest_parser.add_argument("--limit", type=int, default=50, help="Number of posts to fetch")
+    ingest_parser.add_argument("--subreddit", required=True, help="Target subreddit")
+    ingest_parser.add_argument("--query", default="", help="Search query")
+    ingest_parser.add_argument("--limit", type=int, default=50, help="Number of posts")
+
+    subparsers.add_parser("extract", help="Extract pain points from unprocessed evidence")
+    subparsers.add_parser("cluster", help="Cluster unclustered pain points")
+    subparsers.add_parser("evaluate", help="Evaluate clusters into opportunities")
+    subparsers.add_parser("diffuse", help="Generate dossiers for opportunities")
 
     args = parser.parse_args()
 
-    if args.command == "test-pipeline":
-        run_pipeline()
-    elif args.command == "mine":
-        if args.source == "reddit":
-            ingest_reddit(args.subreddit, args.query, args.limit)
+    if args.command == "mine" and args.source == "reddit":
+        ingest_reddit(args.subreddit, args.query, args.limit)
+    elif args.command == "extract":
+        extract_pains()
+    elif args.command == "cluster":
+        cluster_pains()
+    elif args.command == "evaluate":
+        evaluate_opportunities()
+    elif args.command == "diffuse":
+        diffuse_dossiers()
 
 if __name__ == "__main__":
     main()

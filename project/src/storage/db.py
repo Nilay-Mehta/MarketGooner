@@ -145,3 +145,47 @@ class StorageManager:
                 VALUES (?, ?, ?, ?, ?, ?)
             ''', (opp.id, opp.cluster_id, opp.concept, opp.target_customer, json.dumps(opp.existing_alternatives), opp.commercial_relevance))
             conn.commit()
+
+    def get_unprocessed_evidence(self, limit: int = 50):
+        import json
+        with sqlite3.connect(self.db_path, uri=True) as conn:
+            cursor = conn.execute("""
+                SELECT id, source, source_id, url, timestamp, author, text, metadata 
+                FROM evidence 
+                WHERE id NOT IN (
+                    SELECT json_each.value FROM pain_points, json_each(pain_points.evidence_ids)
+                ) LIMIT ?
+            """, (limit,))
+            rows = cursor.fetchall()
+            return [Evidence(id=r[0], source=r[1], source_id=r[2], url=r[3], timestamp=r[4], author=r[5], text=r[6], metadata=json.loads(r[7])) for r in rows]
+
+    def get_unclustered_pain_points(self):
+        import json
+        with sqlite3.connect(self.db_path, uri=True) as conn:
+            cursor = conn.execute("""
+                SELECT id, problem, affected_user, category, severity, workaround, evidence_ids 
+                FROM pain_points 
+                WHERE id NOT IN (
+                    SELECT json_each.value FROM clusters, json_each(clusters.pain_point_ids)
+                )
+            """)
+            rows = cursor.fetchall()
+            return [PainPoint(id=r[0], problem=r[1], affected_user=r[2], category=r[3], severity=r[4], workaround=r[5], evidence_ids=json.loads(r[6])) for r in rows]
+
+    def get_unevaluated_clusters(self):
+        import json
+        with sqlite3.connect(self.db_path, uri=True) as conn:
+            cursor = conn.execute("""
+                SELECT id, canonical_problem, pain_point_ids, unique_users, source_diversity, growth_signal 
+                FROM clusters 
+                WHERE id NOT IN (SELECT cluster_id FROM opportunities)
+            """)
+            rows = cursor.fetchall()
+            return [ProblemCluster(id=r[0], canonical_problem=r[1], pain_point_ids=json.loads(r[2]), unique_users=r[3], source_diversity=r[4], growth_signal=r[5]) for r in rows]
+
+    def get_opportunities(self):
+        import json
+        with sqlite3.connect(self.db_path, uri=True) as conn:
+            cursor = conn.execute('SELECT id, cluster_id, concept, target_customer, existing_alternatives, commercial_relevance FROM opportunities')
+            rows = cursor.fetchall()
+            return [Opportunity(id=r[0], cluster_id=r[1], concept=r[2], target_customer=r[3], existing_alternatives=json.loads(r[4]), commercial_relevance=r[5]) for r in rows]
