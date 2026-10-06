@@ -82,6 +82,11 @@ class ClusteringEngine:
                     
         except Exception as e:
             print(f"    -> [!] Clustering failed: {e}")
+            import traceback
+            traceback.print_exc()
+
+        if not generated_clusters:
+            print(f"    -> [DEBUG] Result from LLM: {result if 'result' in locals() else 'None'}")
 
         print(f"\n[ClusteringEngine] Finished. Built {len(generated_clusters)} ProblemClusters.")
         return generated_clusters

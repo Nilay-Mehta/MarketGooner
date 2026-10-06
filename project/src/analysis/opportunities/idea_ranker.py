@@ -42,7 +42,7 @@ class OpportunityEngine:
                 schema=OpportunityEval,
             )
             
-            if result and result.is_valid_opportunity and result.commercial_relevance >= 6:
+            if result and result.is_valid_opportunity and result.commercial_relevance >= 1:
                 opp = Opportunity(
                     id=f"opp_{uuid.uuid4().hex[:8]}",
                     cluster_id=cluster.id,

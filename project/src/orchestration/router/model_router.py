@@ -1,3 +1,4 @@
+import json
 import os
 import time
 import requests
@@ -111,9 +112,15 @@ class ModelRouter:
                 if res: return res
                 
         if self.groq_key:
-            # We use Groq's fast inference for structured extraction usually
-            pass # TODO implement fast structured groq extraction
-            
+            try:
+                schema_instruction = f"\\nYou MUST respond with valid JSON strictly conforming to this Pydantic schema:\\n{json.dumps(response_model.model_json_schema())}"
+                raw_json = self._call_groq(f"{prompt}\\n{schema_instruction}", sys_prompt, json_mode=True)
+                if raw_json:
+                    clean_json = re.sub(r'^```json\\s*', '', raw_json.strip())
+                    clean_json = re.sub(r'\\s*```$', '', clean_json.strip())
+                    return response_model.model_validate_json(clean_json)
+            except Exception as e:
+                print(f"Groq Structured Error: {e}")
         if self.gemini_key:
             res = self._structured_gemini(prompt, response_model, sys_prompt)
             if res: return res
@@ -129,7 +136,7 @@ class ModelRouter:
             raise RateLimitExceededError("Rate limit exceeded for provider: groq")
         try:
             payload = {
-                "model": "llama-3.3-70b-versatile",
+                "model": "qwen/qwen3.8-27b",
                 "messages": [
                     {"role": "system", "content": system_prompt},
                     {"role": "user", "content": prompt}
@@ -149,8 +156,10 @@ class ModelRouter:
             if res.status_code == 200:
                 self.budget.consume("groq", tokens_used=1000)
                 return res.json()["choices"][0]["message"]["content"]
-        except Exception:
-            pass
+            else:
+                print(f"Groq API Error: {res.status_code} {res.text}")
+        except Exception as e:
+            print(f'API Error: {e}')
         return None
 
     def _structured_gemini(self, prompt: str, response_model: Type[T], system_prompt: str) -> Optional[T]:
@@ -159,7 +168,7 @@ class ModelRouter:
         import json
         try:
             schema_instruction = f"\\nYou MUST respond with valid JSON strictly conforming to this Pydantic schema:\\n{json.dumps(response_model.model_json_schema())}"
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.gemini_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={self.gemini_key}"
             res = requests.post(
                 url,
                 headers={"Content-Type": "application/json"},
@@ -175,6 +184,8 @@ class ModelRouter:
                 clean_json = re.sub(r'^```json\\s*', '', raw_json.strip())
                 clean_json = re.sub(r'\\s*```$', '', clean_json.strip())
                 return response_model.model_validate_json(clean_json)
+            else:
+                print(f"Gemini API returned status code {res.status_code}: {res.text}")
         except Exception as e:
             print(f"Gemini Error: {e}")
         return None
@@ -183,7 +194,7 @@ class ModelRouter:
         if not self.budget.can_proceed("gemini"):
             raise RateLimitExceededError("Rate limit exceeded for provider: gemini")
         try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={self.gemini_key}"
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={self.gemini_key}"
             gen_config = {"temperature": 0.2, "maxOutputTokens": 4096}
             if json_mode:
                 gen_config["responseMimeType"] = "application/json"
@@ -200,8 +211,8 @@ class ModelRouter:
             if res.status_code == 200:
                 self.budget.consume("gemini", tokens_used=1000)
                 return res.json()["candidates"][0]["content"]["parts"][0]["text"]
-        except Exception:
-            pass
+        except Exception as e:
+            print(f'API Error: {e}')
         return None
 
     def _call_github_models(self, prompt: str, system_prompt: str, json_mode: bool = False) -> Optional[str]:
@@ -229,6 +240,6 @@ class ModelRouter:
             if res.status_code == 200:
                 self.budget.consume("github", tokens_used=1000)
                 return res.json()["choices"][0]["message"]["content"]
-        except Exception:
-            pass
+        except Exception as e:
+            print(f'API Error: {e}')
         return None
