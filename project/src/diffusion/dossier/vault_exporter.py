@@ -53,7 +53,17 @@ class DiffusionEngine:
                 with open(filepath, "w", encoding="utf-8") as f:
                     f.write(markdown_content)
                     
-                print(f"    -> Dossier successfully saved to: {filepath}")
+                print(f"    -> Markdown Dossier saved to: {filepath}")
+
+                # Automatically convert to styled Word document
+                try:
+                    from md_to_word import convert_md_to_docx
+                    docx_filepath = os.path.splitext(filepath)[0] + ".docx"
+                    convert_md_to_docx(filepath, docx_filepath)
+                    print(f"    -> Word Document (.docx) saved to: {docx_filepath}")
+                except Exception as docx_err:
+                    print(f"    [!] Word conversion skipped: {docx_err}")
+
                 return filepath
                 
         except Exception as e:
