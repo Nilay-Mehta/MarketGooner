@@ -97,6 +97,12 @@ def main():
     subparsers.add_parser("cluster", help="Cluster unclustered pain points")
     subparsers.add_parser("evaluate", help="Evaluate clusters into opportunities")
     subparsers.add_parser("diffuse", help="Generate dossiers for opportunities")
+    
+    # 1-Click End-to-End Pipeline
+    run_all_parser = subparsers.add_parser("run-all", help="Execute the complete pipeline end-to-end in one shot")
+    run_all_parser.add_argument("--subreddit", default="smallbusiness", help="Subreddit to target (default: smallbusiness)")
+    run_all_parser.add_argument("--query", default="software", help="Keyword to search (default: software)")
+    run_all_parser.add_argument("--limit", type=int, default=20, help="Number of threads to mine (default: 20)")
 
     args = parser.parse_args()
 
@@ -110,6 +116,20 @@ def main():
         evaluate_opportunities()
     elif args.command == "diffuse":
         diffuse_dossiers()
+    elif args.command == "run-all":
+        print("🚀 STARTING 1-CLICK END-TO-END PIPELINE...")
+        print("--------------------------------------------------")
+        ingest_reddit(args.subreddit, args.query, args.limit)
+        print("--------------------------------------------------")
+        extract_pains()
+        print("--------------------------------------------------")
+        cluster_pains()
+        print("--------------------------------------------------")
+        evaluate_opportunities()
+        print("--------------------------------------------------")
+        diffuse_dossiers()
+        print("--------------------------------------------------")
+        print("🎉 ALL DONE! Your Master Word Document and Markdown reports are ready in the output/ folder.")
 
 if __name__ == "__main__":
     main()
