@@ -25,6 +25,8 @@ class ModelRouter:
         self.gemini_key = os.getenv("GEMINI_API_KEY", "").strip() or os.getenv("GOOGLE_API_KEY", "").strip()
         self.github_token = os.getenv("GITHUB_TOKEN", "").strip()
         self.jev_key = os.getenv("JEV_API_KEY", "").strip()  # Placeholder for TypeSafe AI JEV
+        self.use_laya = os.getenv("USE_LAYA", "true").lower() == "true"
+        self._laya_agent = None
         
         # Budget Manager (Protects against rate limits and enforces zero-cost where possible)
         self.budget = BudgetManager(limits={
@@ -38,21 +40,52 @@ class ModelRouter:
     # DECISION INTELLIGENCE (System 1 / Narrow Decisions)
     # =====================================================================
     
+    def _get_laya_agent(self):
+        """Lazy load Laya to conserve memory until decision time."""
+        if self._laya_agent is None:
+            try:
+                import laya
+                print("  [laya] Initializing local Laya System 1 decision model on CPU...")
+                self._laya_agent = laya.load("convaiinnovations/laya", device="cpu")
+                print("  [laya] Laya ready for zero-latency local decisions.")
+            except Exception as e:
+                print(f"  [laya] Could not load local Laya model ({e}). Falling back to cloud LLM.")
+                self.use_laya = False
+        return self._laya_agent
+
     def make_decision(self, prompt: str, schema: Type[T]) -> Optional[T]:
         """
-        Uses a highly optimized model (like JEV) for narrow structured decisions
-        (e.g., 'Is this a complaint?' -> YES/NO).
+        Uses a highly optimized System 1 model (Laya locally, or JEV API) for narrow structured decisions.
+        Falls back to Groq/Gemini if unavailable.
         """
-        # If JEV is enabled, route there. Otherwise fallback to Groq/Gemini as polyfill.
+        if self.use_laya:
+            res = self._call_laya(prompt, schema)
+            if res:
+                return res
+
         if self.jev_key:
-            return self._call_jev(prompt, schema)
+            res = self._call_jev(prompt, schema)
+            if res:
+                return res
             
         # Fallback to extraction models for decisions
         return self.generate_structured(prompt, schema, task_type="decision", model_tier="fast")
 
+    def _call_laya(self, prompt: str, schema: Type[T]) -> Optional[T]:
+        """Runs local System 1 inference via ConvAI Laya."""
+        try:
+            agent = self._get_laya_agent()
+            if not agent:
+                return None
+            decision_dict = agent.decide(prompt, schema=schema)
+            if decision_dict and isinstance(decision_dict, dict):
+                return schema.model_validate(decision_dict)
+        except Exception as e:
+            print(f"  [laya] Decision error: {e}. Falling back to cloud router.")
+        return None
+
     def _call_jev(self, prompt: str, schema: Type[T]) -> Optional[T]:
         """Future integration point for TypeSafe AI's Jev model."""
-        # TODO: Implement Jev Langchain harness / API integration here
         pass
 
     # =====================================================================
