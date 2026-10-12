@@ -72,7 +72,16 @@ def diffuse_dossiers():
     diffusion = DiffusionEngine(router=router)
     for opp in opportunities:
         diffusion.generate_dossier(opp)
-    print("✅ Diffusion Complete.")
+        
+    # Automatically compile everything into a single master report
+    try:
+        from combine_dossiers import compile_market_intelligence_report
+        print("\n=== COMPILING SINGLE MASTER REPORT ===")
+        compile_market_intelligence_report(input_dir="output", output_md="Master_Market_Intelligence_Report.md")
+    except Exception as e:
+        print(f"Master compile notice: {e}")
+
+    print("✅ Diffusion & Master Report Compilation Complete.")
 
 def main():
     parser = argparse.ArgumentParser(description="Market Intelligence Pipeline CLI")
