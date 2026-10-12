@@ -29,9 +29,9 @@ class OpportunityEngine:
         print(f"  [opportunity] Evaluating Cluster: {cluster.id} - '{cluster.canonical_problem}'")
         
         prompt = (
-            f"Problem Theme: {cluster.canonical_problem}\n"
-            f"Unique users complaining: {cluster.unique_users}\n"
-            f"Market growth signal: {cluster.growth_signal}"
+            f"B2B Problem Wedge: {cluster.canonical_problem}\n"
+            f"Evidence Signal: {cluster.unique_users} independent business owners complaining about this exact operational friction.\n"
+            f"Question: Does this recurring pain represent a commercially viable B2B software startup or wedge opportunity?"
         )
         
         try:
@@ -41,7 +41,10 @@ class OpportunityEngine:
                 schema=OpportunityGate,
             )
             
-            if not gate or not gate.is_valid_opportunity or gate.commercial_relevance < 1:
+            # Pass if viable is True, or if severity score is high (>= 4)
+            is_qualified = bool(gate and (gate.is_valid_opportunity or gate.commercial_relevance >= 4))
+            
+            if not is_qualified:
                 print(f"    -> Cluster rejected by System 1 Gate (Viable: {gate.is_valid_opportunity if gate else False}, Score: {gate.commercial_relevance if gate else 0}/10).")
                 return None
 

@@ -41,13 +41,21 @@ class ClusteringEngine:
             })
 
         system_prompt = (
-            "You are a mathematical clustering engine for market intelligence. "
-            "Your job is to read a list of user pain points and group them by underlying root cause/theme. "
-            "Return a strictly formatted JSON array of clusters, where each cluster has a 'canonical_problem' "
-            "and a list of 'pain_point_ids' that belong to it."
+            "You are an elite B2B Product Strategist and Market Clustering Engine. "
+            "Your job is to read user pain points and group them into TIGHT, HIGHLY SPECIFIC problem clusters. "
+            "\nCRITICAL RULES:"
+            "\n1. DO NOT create broad catch-all buckets like 'Manual processes burden businesses' or 'General inefficiencies'."
+            "\n2. Group by SPECIFIC operational workflow or buying trigger (e.g., 'Shopfloor Inventory Reconciliation vs Excel', 'Per-Seat Software Feature Gating', 'Client Conversation Context & Follow-up', 'Shared Inbox Ownership Friction')."
+            "\n3. Each cluster MUST represent a distinct, focused software product or wedge, not an entire business suite."
+            "\n4. If a pain point represents a unique, distinct workflow, give it its own focused cluster."
+            "\nReturn a strictly formatted JSON object with 'clusters', each having a concise, punchy 'canonical_problem' and 'pain_point_ids'."
         )
 
-        prompt = f"Cluster these pain points into high-level themes:\n{json.dumps(payload, indent=2)}"
+        prompt = (
+            f"Group these {len(payload)} pain points into focused, domain-specific problem themes. "
+            f"Keep clusters tight and actionable (2-4 pain points per cluster maximum unless they are identical workflows):\n"
+            f"{json.dumps(payload, indent=2)}"
+        )
         
         generated_clusters = []
         try:
