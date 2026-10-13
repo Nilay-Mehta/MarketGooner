@@ -14,6 +14,7 @@ from src.intelligence.extraction.pain_extractor import PainExtractor
 from src.analysis.clustering.cluster import ClusteringEngine
 from src.analysis.opportunities.idea_ranker import OpportunityEngine
 from src.diffusion.dossier.vault_exporter import DiffusionEngine
+from src.intelligence.decomposition.problem_decomposer import ProblemDecomposer
 from combine_dossiers import compile_market_intelligence_report
 
 # =====================================================================
@@ -519,7 +520,99 @@ st.markdown("""
       padding: 3px 8px !important;
       border-radius: 4px !important;
       font-size: 0.88rem !important;
-      font-weight: 600 !important;
+    }
+    /* Textarea overrides */
+    div[data-baseweb="textarea"],
+    div[data-baseweb="textarea"] > div {
+      border: 1.5px solid var(--ink) !important;
+      border-radius: 7px !important;
+      background: #fffdf7 !important;
+      box-shadow: 3px 3px 0 var(--neon) !important;
+    }
+
+    div[data-baseweb="textarea"]:focus-within {
+      border-color: var(--ink) !important;
+      box-shadow: 4px 4px 0 var(--neon) !important;
+    }
+
+    textarea {
+      color: var(--ink) !important;
+      font-family: var(--mono) !important;
+      font-size: 0.9rem !important;
+      line-height: 1.45 !important;
+    }
+
+    /* Main LLM Decomposition Blueprint Box */
+    .decomp-box {
+      border: 1.5px solid var(--ink);
+      border-radius: 8px;
+      background: #fffdf7;
+      box-shadow: 4px 4px 0 var(--neon);
+      padding: 22px 24px;
+      margin-bottom: 28px;
+    }
+
+    .decomp-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1.5px solid var(--line);
+    }
+
+    .decomp-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 16px;
+    }
+
+    @media (max-width: 820px) {
+      .decomp-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .decomp-col {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .decomp-label {
+      font-family: var(--mono) !important;
+      font-size: 0.74rem;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .decomp-val {
+      font-family: var(--display) !important;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--ink);
+      line-height: 1.4;
+    }
+
+    .decomp-steps {
+      background: #f6f1e3;
+      border: 1px solid var(--line);
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin-top: 10px;
+    }
+
+    .step-item {
+      font-family: var(--mono) !important;
+      font-size: 0.8rem;
+      color: var(--ink);
+      margin: 6px 0;
+      line-height: 1.45;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -574,8 +667,15 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # =====================================================================
-# WORKSPACE PANEL (INPUT CONSOLE)
+# WORKSPACE PANEL (PROBLEM & DEMAND INPUT CONSOLE)
 # =====================================================================
+
+if "selected_problem" not in st.session_state:
+    st.session_state["selected_problem"] = (
+        "Small business contractors (HVAC, plumbing, electrical) lose thousands tracking change orders "
+        "and waiting 60+ days for invoice payments from general contractors. "
+        "QuickBooks Online is too generic and doesn't solve contractor cash flow."
+    )
 
 st.markdown("""
 <div class="workspace-box">
@@ -585,24 +685,47 @@ st.markdown("""
       <div class="dot dot-amber"></div>
       <div class="dot dot-green"></div>
     </div>
-    <span class="toolbar-title">pipeline_runner.sh --mode=system1</span>
-    <span class="toolbar-title">engine: laya-modernbert-421m</span>
+    <span class="toolbar-title">orchestrator.py --task=problem_decomposition</span>
+    <span class="toolbar-title">engine: main-llm-orchestrator + laya-modernbert-421m</span>
   </div>
+  <div class="workspace-body">
 """, unsafe_allow_html=True)
 
-col_sub, col_q, col_mode, col_btn = st.columns([1.5, 1.2, 1.2, 1.4])
+# Problem Statement / Demand Input (Single line or full paragraph)
+problem_input = st.text_area(
+    "INPUT TARGET PROBLEM, OPERATIONAL FRICTION, OR DEMAND THESIS (ONE LINE OR FULL PARAGRAPH):",
+    value=st.session_state["selected_problem"],
+    height=95,
+    placeholder="e.g. Freelancers wasting hours chasing overdue invoices and manually reconciling bank transfers across disjointed apps..."
+)
 
-with col_sub:
-    subreddit = st.text_input("Subreddit Target", value="smallbusiness")
-with col_q:
-    query = st.text_input("Problem Keyword", value="software")
+# Preset problem buttons for quick testing / presentations
+st.markdown("<div style='font-family: var(--mono); font-size: 0.74rem; font-weight: 700; color: var(--muted); text-transform: uppercase; margin: 10px 0 6px 0;'>Quick Preset Prompts:</div>", unsafe_allow_html=True)
+
+col_p1, col_p2, col_p3 = st.columns(3)
+with col_p1:
+    if st.button("PRESET 01: Contractor Cash Flow", key="btn_p1"):
+        st.session_state["selected_problem"] = "Small business trade contractors (HVAC, plumbing, electrical) lose thousands tracking change orders and waiting 60+ days for invoice payments from general contractors. QuickBooks is too bloated and doesn't solve contractor cash flow."
+        st.rerun()
+with col_p2:
+    if st.button("PRESET 02: B2B Lead Gen & Outreach", key="btn_p2"):
+        st.session_state["selected_problem"] = "B2B marketing agencies and consultancies lack dedicated sales teams and struggle with the exorbitant costs of enterprise sales platforms like HubSpot and Salesforce for outbound prospecting."
+        st.rerun()
+with col_p3:
+    if st.button("PRESET 03: SMB Contract Renewal Gaps", key="btn_p3"):
+        st.session_state["selected_problem"] = "Operations managers and founders of SMBs manage dozens of vendor and client contracts via messy email chains and spreadsheets, missing auto-renewals and milestone deadlines."
+        st.rerun()
+
+st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
+
+col_mode, col_btn = st.columns([1.5, 2.5])
 with col_mode:
     mode = st.selectbox("Execution Mode", ["Safe Demo Mode (Instant / Offline)", "Live Reddit Scrape"])
 with col_btn:
     st.markdown("<div style='height: 27px;'></div>", unsafe_allow_html=True)
-    run_btn = st.button("RUN INTELLIGENCE SCAN")
+    run_btn = st.button("DECOMPOSE PROBLEM & RUN MULTI-AGENT SCAN ->")
 
-st.markdown("</div>", unsafe_allow_html=True)
+st.markdown("</div></div>", unsafe_allow_html=True)
 
 # =====================================================================
 # PIPELINE EXECUTION
@@ -615,9 +738,22 @@ if run_btn:
     try:
         router = ModelRouter()
         db = StorageManager()
+        decomposer = ProblemDecomposer(router=router)
 
-        msg.markdown("`[1/4] Mining customer conversations via public syndication...`")
-        prog.progress(25)
+        # STEP 1: Main LLM breaks problem into ICP, friction, subreddits, keywords, and steps
+        msg.markdown("`[1/4] Main LLM Orchestrator: Decomposing user problem into ICP, subreddits, and keyword queries...`")
+        prog.progress(20)
+        decomp = decomposer.decompose(problem_input)
+        st.session_state["latest_decomp"] = decomp.model_dump()
+        time.sleep(0.4)
+
+        # Derive subreddits and search queries decided by the LLM
+        target_sub = decomp.subreddits[0] if decomp.subreddits else "smallbusiness"
+        target_query = decomp.search_queries[0] if decomp.search_queries else "software"
+
+        # STEP 2: Agent 1 (Miner)
+        msg.markdown(f"`[2/4] Agent 1 (Miner): Mining r/{target_sub} for customer conversations matching '{target_query}'...`")
+        prog.progress(40)
         
         if mode == "Safe Demo Mode (Instant / Offline)" and os.path.exists("eval_ground_truth.csv"):
             import csv
@@ -641,20 +777,19 @@ if run_btn:
                 scraped.append(ev)
         else:
             miner = RedditMiner()
-            scraped = miner.fetch_evidence(subreddit=subreddit, query=query, limit=15)
+            scraped = miner.fetch_evidence(subreddit=target_sub, query=target_query, limit=15)
             for ev in scraped:
                 db.save_evidence(ev)
 
-        msg.markdown("`[2/4] Extracting canonical pain points and clustering root causes...`")
-        prog.progress(50)
+        # STEP 3: Agent 2 (Extractor) & Agent 3 (System 1 Decision Gate)
+        msg.markdown("`[3/4] Agent 2 & 3: Extracting canonical pain points and screening with ConvAI Laya System 1 gate (ModernBERT-421M)...`")
+        prog.progress(70)
         extractor = PainExtractor(router=router, storage=db)
         pains = extractor.process_evidence(scraped)
 
         clustering = ClusteringEngine(router=router, storage=db)
         clusters = clustering.build_clusters(pains)
 
-        msg.markdown("`[3/4] Running ConvAI Laya local System 1 decision gate (ModernBERT-421M)...`")
-        prog.progress(75)
         opp_engine = OpportunityEngine(router=router, storage=db)
         opportunities = []
         for c in clusters:
@@ -662,7 +797,8 @@ if run_btn:
             if op:
                 opportunities.append(op)
 
-        msg.markdown("`[4/4] Writing executive dossiers and compiling Master Word document...`")
+        # STEP 4: Agent 4 (Diffusion)
+        msg.markdown("`[4/4] Agent 4 (Diffusion): Writing venture dossiers and compiling Master Word document...`")
         prog.progress(90)
         diffusion = DiffusionEngine(router=router)
         for op in opportunities:
@@ -677,6 +813,58 @@ if run_btn:
 
     except Exception as e:
         st.error(f"Execution failed: {e}")
+
+# =====================================================================
+# MAIN LLM DECOMPOSITION BLUEPRINT (ALWAYS VISIBLE)
+# =====================================================================
+
+current_decomp = st.session_state.get("latest_decomp")
+if not current_decomp:
+    decomposer = ProblemDecomposer()
+    current_decomp = decomposer.decompose(st.session_state["selected_problem"]).model_dump()
+    st.session_state["latest_decomp"] = current_decomp
+
+subs_tags = " ".join([f'<span class="tag tag-cyan">r/{s}</span>' for s in current_decomp.get('subreddits', ['smallbusiness'])])
+queries_tags = " ".join([f'<span class="tag tag-amber">{q}</span>' for q in current_decomp.get('search_queries', ['software'])])
+alts_str = ", ".join(current_decomp.get('displaced_incumbents', ['Excel', 'Manual tools']))
+steps_list = "".join([f'<div class="step-item">-> {task}</div>' for task in current_decomp.get('agent_tasks', [])])
+
+decomp_card_html = f"""
+<div class="decomp-box">
+  <div class="decomp-header">
+    <div style="display: flex; gap: 8px; align-items: center;">
+      <span class="tag tag-signal">MAIN LLM ORCHESTRATOR</span>
+      <span style="font-family: var(--display); font-weight: 700; font-size: 1.05rem; color: var(--ink);">
+        Demand Decomposition & Multi-Agent Routing
+      </span>
+    </div>
+    <span class="opp-id">STATUS: DECOMPOSED</span>
+  </div>
+  <div class="decomp-grid">
+    <div class="decomp-col">
+      <div class="decomp-label">Target Customer (ICP Identified by LLM)</div>
+      <div class="decomp-val">{current_decomp.get('target_icp', '')}</div>
+      <div class="decomp-label" style="margin-top: 10px;">Root Friction Hypothesis</div>
+      <div class="decomp-val" style="font-size: 0.88rem; color: var(--muted);">{current_decomp.get('core_friction', '')}</div>
+      <div class="decomp-label" style="margin-top: 10px;">Displaced Incumbents</div>
+      <div class="decomp-val" style="font-size: 0.82rem; font-family: var(--mono); color: var(--charcoal);">{alts_str}</div>
+    </div>
+    <div class="decomp-col">
+      <div class="decomp-label">Target Subreddits (Decided by LLM)</div>
+      <div style="margin: 4px 0 10px 0;">{subs_tags}</div>
+      <div class="decomp-label">Search Queries & Keywords (Decided by LLM)</div>
+      <div style="margin: 4px 0 10px 0;">{queries_tags}</div>
+      <div class="decomp-label">Problem Summary</div>
+      <div class="decomp-val" style="font-size: 0.88rem; font-style: italic;">"{current_decomp.get('summary', '')}"</div>
+    </div>
+  </div>
+  <div class="decomp-steps">
+    <div class="decomp-label" style="margin-bottom: 6px;">Multi-Agent Pipeline Execution Plan:</div>
+    {steps_list}
+  </div>
+</div>
+"""
+st.markdown(decomp_card_html, unsafe_allow_html=True)
 
 # =====================================================================
 # ACTION BAR: DOWNLOADS (COMMITGEN BUTTONS)
