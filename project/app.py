@@ -16,178 +16,330 @@ from src.diffusion.dossier.vault_exporter import DiffusionEngine
 from combine_dossiers import compile_market_intelligence_report
 
 # =====================================================================
-# PAGE SETUP & NEON GREEN COMIC THEME (NO EMOJIS)
+# PAGE SETUP & COMMITGEN DESIGN SYSTEM (PAPER & INK TECH BRUTALISM)
 # =====================================================================
 
 st.set_page_config(
-    page_title="MARKET GOONER // GAP MINER",
+    page_title="marketgooner | Autonomous B2B Gap Mining Engine",
     page_icon=None,
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# 100% NEON GREEN + INK BLACK COMIC BOOK CSS (ZERO EMOJIS)
+# Exact design tokens and grid layout from commitgen-ten.vercel.app
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Space+Grotesk:wght@600;700;900&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
 
-    /* Color Palette */
     :root {
-        --neon-green: #00FF66;
-        --neon-glow: rgba(0, 255, 102, 0.45);
-        --comic-yellow: #FFE600;
-        --pure-black: #000000;
-        --card-bg: #111317;
+      --paper: #f6f3ea;
+      --ink: #171714;
+      --muted: #69645b;
+      --line: #d7d0c0;
+      --panel: #fffdf7;
+      --charcoal: #24241f;
+      --oxide: #c84f31;
+      --signal: #38b46b;
+      --cyan: #2a9db4;
+      --amber: #d9a33a;
+      --shadow: 0 18px 60px rgba(23, 23, 20, 0.12);
+      --mono: "IBM Plex Mono", "Courier New", monospace;
+      --display: "Space Grotesk", sans-serif;
+      --body: "Space Grotesk", sans-serif;
     }
 
-    body, .stApp {
-        background-color: #07080A !important;
-        color: #FFFFFF !important;
-        font-family: 'Space Grotesk', sans-serif !important;
+    * {
+      box-sizing: border-box;
     }
 
-    /* Headings */
-    .comic-title {
-        font-family: 'Bangers', cursive !important;
-        font-size: 60px !important;
-        color: #00FF66 !important;
-        letter-spacing: 2.5px !important;
-        text-transform: uppercase !important;
-        margin: 0 !important;
-        text-shadow: 4px 4px 0px #000000, 0 0 30px var(--neon-glow) !important;
-        line-height: 1.05 !important;
+    /* Streamlit Background Override to match commitgen paper grid */
+    html, body, .stApp {
+      background:
+        linear-gradient(90deg, rgba(23, 23, 20, 0.035) 1px, transparent 1px),
+        linear-gradient(rgba(23, 23, 20, 0.035) 1px, transparent 1px),
+        var(--paper) !important;
+      background-size: 44px 44px !important;
+      color: var(--ink) !important;
+      font-family: var(--body) !important;
     }
 
-    .comic-sub {
-        font-family: 'Space Grotesk', sans-serif !important;
-        font-size: 15px !important;
-        color: #A3E635 !important;
-        font-weight: 700 !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1.5px !important;
-        margin-top: 6px !important;
+    /* Topbar */
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+      padding: 16px 24px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: rgba(255, 253, 247, 0.95);
+      backdrop-filter: blur(16px);
+      margin-bottom: 24px;
+      box-shadow: 0 4px 12px rgba(23, 23, 20, 0.04);
     }
 
-    /* Comic Box Cards */
-    .comic-card {
-        background: #111317 !important;
-        border: 3.5px solid #00FF66 !important;
-        border-radius: 12px !important;
-        box-shadow: 7px 7px 0px #000000, 7px 7px 0px 2px #00FF66 !important;
-        padding: 24px !important;
-        margin-bottom: 24px !important;
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: var(--display);
+      font-weight: 700;
+      font-size: 1.15rem;
+      color: var(--ink);
     }
 
-    .comic-card:hover {
-        box-shadow: 9px 9px 0px #FFE600 !important;
-        border-color: #FFE600 !important;
-        transform: translate(-2px, -2px) !important;
-        transition: all 0.15s ease-in-out !important;
+    .mark {
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      background: var(--ink);
+      color: var(--paper);
+      border-radius: 7px;
+      font-family: var(--mono);
+      font-size: 0.9rem;
+      font-weight: 700;
+      box-shadow: 4px 4px 0 var(--signal);
     }
 
-    /* Comic Badges */
-    .comic-badge {
-        display: inline-block;
-        font-family: 'Bangers', cursive;
-        font-size: 17px;
-        letter-spacing: 1px;
-        padding: 4px 14px;
-        border: 2.5px solid #000000;
-        border-radius: 6px;
-        box-shadow: 3px 3px 0px #000000;
-        margin-right: 8px;
-        margin-bottom: 10px;
-    }
-    .badge-green { background-color: #00FF66; color: #000000; }
-    .badge-yellow { background-color: #FFE600; color: #000000; }
-    .badge-white { background-color: #FFFFFF; color: #000000; }
-
-    /* Speech Bubble for Real Reddit Quotes */
-    .speech-bubble {
-        background: #181A22;
-        border: 2.5px solid #00FF66;
-        border-radius: 8px;
-        padding: 14px 18px;
-        margin-top: 14px;
-        margin-bottom: 12px;
-        font-size: 14.5px;
-        color: #F1F5F9;
-        font-style: italic;
-        line-height: 1.5;
-        box-shadow: 4px 4px 0px #000000;
-    }
-    .speech-label {
-        font-family: 'Bangers', cursive;
-        font-size: 16px;
-        color: #FFE600;
-        margin-bottom: 4px;
-        font-style: normal;
-        letter-spacing: 1px;
+    .eyebrow {
+      display: inline-block;
+      border: 1px solid var(--ink);
+      border-radius: 999px;
+      padding: 5px 12px;
+      font-family: var(--mono);
+      font-size: 0.76rem;
+      font-weight: 600;
+      background: var(--panel);
+      box-shadow: 3px 3px 0 var(--amber);
+      color: var(--ink);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    /* ALL BUTTONS: NEON GREEN COMIC POP */
+    /* Hero Typography */
+    .hero-title {
+      font-family: var(--display);
+      font-size: clamp(2.4rem, 5vw, 4.4rem);
+      line-height: 0.95;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 12px 0 16px 0;
+      letter-spacing: -0.02em;
+    }
+
+    .hero-subtitle {
+      max-width: 64ch;
+      color: var(--muted);
+      font-size: 1.1rem;
+      line-height: 1.55;
+      margin-bottom: 24px;
+    }
+
+    /* Terminal Workspace Box (Commitgen style) */
+    .workspace-box {
+      border: 1px solid var(--ink);
+      border-radius: 8px;
+      background: var(--panel);
+      box-shadow: var(--shadow);
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+
+    .workspace-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 12px 18px;
+      border-bottom: 1px solid var(--ink);
+      background: var(--charcoal);
+      color: var(--paper);
+    }
+
+    .traffic {
+      display: flex;
+      gap: 7px;
+      align-items: center;
+    }
+
+    .dot {
+      width: 11px;
+      height: 11px;
+      border-radius: 999px;
+    }
+    .dot-red { background: var(--oxide); }
+    .dot-amber { background: var(--amber); }
+    .dot-green { background: var(--signal); }
+
+    .toolbar-title {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: #c9c2b2;
+      letter-spacing: 0.5px;
+    }
+
+    .workspace-body {
+      padding: 24px;
+      background: #fffdf7;
+    }
+
+    /* Opportunity Cards (Commitgen Panel style) */
+    .opp-panel {
+      border: 1px solid var(--ink);
+      border-radius: 8px;
+      padding: 22px;
+      background: var(--panel);
+      box-shadow: 4px 4px 0 var(--ink);
+      margin-bottom: 20px;
+      transition: transform 140ms ease, box-shadow 140ms ease;
+    }
+
+    .opp-panel:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 var(--oxide);
+    }
+
+    .opp-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .tag {
+      font-family: var(--mono);
+      font-size: 0.74rem;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 4px;
+      border: 1px solid var(--ink);
+      text-transform: uppercase;
+    }
+    .tag-signal { background: #e3f7eb; color: #176435; border-color: var(--signal); }
+    .tag-amber { background: #fdf5e2; color: #875c0d; border-color: var(--amber); }
+    .tag-cyan { background: #e6f6f9; color: #125e6e; border-color: var(--cyan); }
+
+    .opp-title {
+      font-family: var(--display);
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--ink);
+      margin: 6px 0 10px 0;
+      line-height: 1.25;
+    }
+
+    .opp-problem {
+      color: var(--muted);
+      font-size: 0.95rem;
+      line-height: 1.55;
+      margin: 8px 0;
+    }
+
+    .opp-alts {
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      color: var(--charcoal);
+      margin: 10px 0;
+      background: #f4eee1;
+      padding: 6px 12px;
+      border-radius: 5px;
+      width: fit-content;
+      border: 1px solid var(--line);
+    }
+
+    /* Terminal Rant Bubble */
+    .terminal-quote {
+      border: 1px solid #3c3a32;
+      border-radius: 7px;
+      background: #171714;
+      color: #f6f3ea;
+      padding: 14px 16px;
+      font-family: var(--mono);
+      font-size: 0.84rem;
+      line-height: 1.55;
+      margin-top: 14px;
+      position: relative;
+    }
+
+    .terminal-label {
+      color: var(--signal);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.5px;
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    /* Buttons Override (Commitgen Button Style) */
     .stButton > button,
-    .stDownloadButton > button,
-    button[kind="primary"],
-    button[kind="secondary"] {
-        font-family: 'Bangers', cursive !important;
-        font-size: 22px !important;
-        letter-spacing: 1.5px !important;
-        background-color: #00FF66 !important;
-        color: #000000 !important;
-        border: 3.5px solid #000000 !important;
-        border-radius: 8px !important;
-        box-shadow: 5px 5px 0px #000000 !important;
-        padding: 12px 24px !important;
-        transition: all 0.1s ease-in-out !important;
-        width: 100% !important;
+    .stDownloadButton > button {
+      border: 1px solid var(--ink) !important;
+      border-radius: 8px !important;
+      padding: 12px 18px !important;
+      background: var(--ink) !important;
+      color: var(--paper) !important;
+      text-decoration: none !important;
+      font-family: var(--display) !important;
+      font-weight: 700 !important;
+      font-size: 0.95rem !important;
+      cursor: pointer !important;
+      box-shadow: 4px 4px 0 var(--oxide) !important;
+      transition: transform 140ms ease, box-shadow 140ms ease !important;
+      width: 100% !important;
     }
 
     .stButton > button:hover,
     .stDownloadButton > button:hover {
-        background-color: #FFE600 !important;
-        box-shadow: 3px 3px 0px #000000 !important;
-        transform: translate(2px, 2px) !important;
-        color: #000000 !important;
-        border-color: #000000 !important;
+      transform: translate(-2px, -2px) !important;
+      box-shadow: 6px 6px 0 var(--oxide) !important;
+      background: var(--charcoal) !important;
+      color: var(--paper) !important;
     }
 
-    /* Reddit Source Verification Button */
-    a.reddit-btn {
-        display: inline-block;
-        background-color: #000000 !important;
-        border: 2.5px solid #00FF66 !important;
-        color: #00FF66 !important;
-        padding: 8px 16px !important;
-        border-radius: 6px !important;
-        font-family: 'Space Grotesk', sans-serif !important;
-        font-weight: 800 !important;
-        font-size: 13.5px !important;
-        text-decoration: none !important;
-        box-shadow: 3px 3px 0px #000000 !important;
+    /* Source Links */
+    a.source-btn {
+      display: inline-block;
+      margin-top: 12px;
+      border: 1px solid var(--ink);
+      border-radius: 6px;
+      background: var(--paper);
+      color: var(--ink);
+      padding: 7px 12px;
+      font-family: var(--mono);
+      font-size: 0.78rem;
+      font-weight: 600;
+      text-decoration: none;
+      box-shadow: 3px 3px 0 var(--cyan);
+      transition: all 120ms ease;
     }
-    a.reddit-btn:hover {
-        background-color: #00FF66 !important;
-        color: #000000 !important;
-        border-color: #000000 !important;
+    a.source-btn:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 4px 4px 0 var(--cyan);
+      color: var(--ink);
     }
 
-    /* Inputs */
+    /* Streamlit Input fields */
     div[data-baseweb="input"] {
-        border: 2.5px solid #00FF66 !important;
-        border-radius: 8px !important;
-        background-color: #12141A !important;
-        color: #FFFFFF !important;
+      border: 1px solid var(--line) !important;
+      border-radius: 7px !important;
+      background: #fffaf0 !important;
+    }
+    div[data-baseweb="input"]:focus-within {
+      border-color: var(--ink) !important;
+      box-shadow: 2px 2px 0 var(--signal) !important;
     }
     input {
-        color: #00FF66 !important;
-        font-family: 'Space Grotesk', sans-serif !important;
-        font-weight: 700 !important;
+      color: var(--ink) !important;
+      font-family: var(--mono) !important;
+      font-size: 0.9rem !important;
     }
-    div[data-baseweb="select"] {
-        border: 2.5px solid #00FF66 !important;
-        border-radius: 8px !important;
-        background-color: #12141A !important;
+    label {
+      font-family: var(--mono) !important;
+      font-size: 0.8rem !important;
+      color: var(--muted) !important;
+      text-transform: uppercase !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -213,59 +365,79 @@ def load_data():
     return opps, evidence
 
 # =====================================================================
-# HEADER
+# TOPBAR (COMMITGEN NAVIGATION)
 # =====================================================================
 
-col_h1, col_h2 = st.columns([2.5, 1.0])
-with col_h1:
-    st.markdown('<h1 class="comic-title">MARKET GOONER // GAP MINER</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="comic-sub">TURNING REAL REDDIT COMPLAINTS INTO VALIDATED B2B SAAS OPPORTUNITIES</p>', unsafe_allow_html=True)
+st.markdown("""
+<div class="topbar">
+  <div class="brand">
+    <div class="mark">mg</div>
+    <span>marketgooner</span>
+  </div>
+  <div>
+    <span class="eyebrow">local system 1 decision engine active</span>
+  </div>
+</div>
+""", unsafe_allow_html=True)
 
-with col_h2:
-    st.markdown("""
-    <div style="text-align: right; margin-top: 10px;">
-        <span class="comic-badge badge-green">LAYA SYSTEM 1 (CPU)</span>
-        <span class="comic-badge badge-yellow">ZERO API COST</span>
+# =====================================================================
+# HERO SECTION
+# =====================================================================
+
+st.markdown("""
+<div class="eyebrow" style="margin-bottom: 8px;">b2b micro-saas gap discovery</div>
+<div class="hero-title">Mine customer friction.<br>Synthesize validated software.</div>
+<p class="hero-subtitle">
+  An autonomous research pipeline that extracts operational pain points from live community threads, 
+  gates market density with local decision models, and compiles investor-ready venture dossiers.
+</p>
+""", unsafe_allow_html=True)
+
+# =====================================================================
+# WORKSPACE PANEL (INPUT CONSOLE)
+# =====================================================================
+
+st.markdown("""
+<div class="workspace-box">
+  <div class="workspace-toolbar">
+    <div class="traffic">
+      <div class="dot dot-red"></div>
+      <div class="dot dot-amber"></div>
+      <div class="dot dot-green"></div>
     </div>
-    """, unsafe_allow_html=True)
+    <span class="toolbar-title">pipeline_runner.sh --mode=system1</span>
+    <span class="toolbar-title">engine: laya-modernbert-421m</span>
+  </div>
+""", unsafe_allow_html=True)
 
-st.markdown("<hr style='border: 2px solid #00FF66; margin: 16px 0 24px 0;'>", unsafe_allow_html=True)
+col_sub, col_q, col_mode, col_btn = st.columns([1.5, 1.2, 1.2, 1.4])
 
-# =====================================================================
-# STEP 1: CONFIGURE & MINE
-# =====================================================================
+with col_sub:
+    subreddit = st.text_input("Subreddit Target", value="smallbusiness")
+with col_q:
+    query = st.text_input("Problem Keyword", value="software")
+with col_mode:
+    mode = st.selectbox("Execution Mode", ["Safe Demo Mode (Instant / Offline)", "Live Reddit Scrape"])
+with col_btn:
+    st.markdown("<div style='height: 27px;'></div>", unsafe_allow_html=True)
+    run_btn = st.button("RUN INTELLIGENCE SCAN")
 
-st.markdown('<div class="comic-card">', unsafe_allow_html=True)
-st.markdown('<h3 style="font-family: Bangers; font-size: 28px; color: #00FF66; margin: 0 0 12px 0;">[STEP 1] CONFIGURE AND LAUNCH</h3>', unsafe_allow_html=True)
-
-c_sub, c_query, c_mode, c_run = st.columns([1.5, 1.2, 1.2, 1.4])
-
-with c_sub:
-    subreddit = st.text_input("Target Subreddit:", value="smallbusiness")
-with c_query:
-    query = st.text_input("Problem Topic:", value="software")
-with c_mode:
-    mode = st.selectbox("Mode:", ["Safe Demo Mode (Instant / Offline)", "Live Reddit Scrape"])
-with c_run:
-    st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-    run_btn = st.button("MINE PAIN POINTS", use_container_width=True)
-
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown("</div>", unsafe_allow_html=True)
 
 # =====================================================================
-# PIPELINE EXECUTION ENGINE
+# PIPELINE EXECUTION
 # =====================================================================
 
 if run_btn:
-    progress_bar = st.progress(0)
-    status_text = st.empty()
+    prog = st.progress(0)
+    msg = st.empty()
     
     try:
         router = ModelRouter()
         db = StorageManager()
 
-        status_text.markdown("### [1/4] Mining Customer Conversations...")
-        progress_bar.progress(25)
+        msg.markdown("`[1/4] Mining customer conversations via public syndication...`")
+        prog.progress(25)
         
         if mode == "Safe Demo Mode (Instant / Offline)" and os.path.exists("eval_ground_truth.csv"):
             import csv
@@ -293,16 +465,16 @@ if run_btn:
             for ev in scraped:
                 db.save_evidence(ev)
 
-        status_text.markdown("### [2/4] Fast LLM Extracting Pain Points and Clustering...")
-        progress_bar.progress(50)
+        msg.markdown("`[2/4] Extracting canonical pain points and clustering root causes...`")
+        prog.progress(50)
         extractor = PainExtractor(router=router, storage=db)
         pains = extractor.process_evidence(scraped)
 
         clustering = ClusteringEngine(router=router, storage=db)
         clusters = clustering.build_clusters(pains)
 
-        status_text.markdown("### [3/4] Running ConvAI Laya Local System 1 Decision Gate...")
-        progress_bar.progress(75)
+        msg.markdown("`[3/4] Running ConvAI Laya local System 1 decision gate (ModernBERT-421M)...`")
+        prog.progress(75)
         opp_engine = OpportunityEngine(router=router, storage=db)
         opportunities = []
         for c in clusters:
@@ -310,88 +482,87 @@ if run_btn:
             if op:
                 opportunities.append(op)
 
-        status_text.markdown("### [4/4] Generating Word and Markdown Reports...")
-        progress_bar.progress(90)
+        msg.markdown("`[4/4] Writing executive dossiers and compiling Master Word document...`")
+        prog.progress(90)
         diffusion = DiffusionEngine(router=router)
         for op in opportunities:
             diffusion.generate_dossier(op)
 
         compile_market_intelligence_report(input_dir="delivery_pack", output_md="Market_Intelligence_Report.md")
 
-        progress_bar.progress(100)
-        status_text.success("SUCCESS: Scan Finished. All Opportunities and Master Report Ready Below.")
+        prog.progress(100)
+        msg.success(f"Execution complete. Found {len(opportunities)} validated B2B opportunities.")
         time.sleep(1)
         st.rerun()
 
     except Exception as e:
-        st.error(f"Execution Error: {e}")
+        st.error(f"Execution failed: {e}")
 
 # =====================================================================
-# STEP 2: DOWNLOAD DELIVERABLES (PROMINENT NEON BUTTONS)
+# ACTION BAR: DOWNLOADS (COMMITGEN BUTTONS)
 # =====================================================================
-
-st.markdown('<h3 style="font-family: Bangers; font-size: 28px; color: #FFE600; margin-top: 10px;">[STEP 2] DOWNLOAD THE REPORTS</h3>', unsafe_allow_html=True)
-
-col_d1, col_d2, col_d3 = st.columns([1.5, 1.5, 1.0])
 
 docx_path = "delivery_pack/Market_Intelligence_Report.docx"
 md_path = "delivery_pack/Market_Intelligence_Report.md"
 csv_path = "eval_ground_truth.csv"
 
-with col_d1:
+col_dl1, col_dl2, col_dl3 = st.columns([1.5, 1.5, 1.0])
+
+with col_dl1:
     if os.path.exists(docx_path):
         with open(docx_path, "rb") as f:
             st.download_button(
-                label="DOWNLOAD WORD REPORT (.DOCX)",
+                label="DOWNLOAD MASTER WORD REPORT (.DOCX)",
                 data=f,
                 file_name="Market_Intelligence_Report.docx",
-                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                use_container_width=True
+                mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document"
             )
-    else:
-        st.button("DOCX REPORT (RUN SCAN FIRST)", disabled=True)
 
-with col_d2:
+with col_dl2:
     if os.path.exists(md_path):
         with open(md_path, "rb") as f:
             st.download_button(
                 label="DOWNLOAD RAW MARKDOWN (.MD)",
                 data=f,
                 file_name="Market_Intelligence_Report.md",
-                mime="text/markdown",
-                use_container_width=True
+                mime="text/markdown"
             )
-    else:
-        st.button("MD REPORT (RUN SCAN FIRST)", disabled=True)
 
-with col_d3:
+with col_dl3:
     if os.path.exists(csv_path):
         with open(csv_path, "rb") as f:
             st.download_button(
-                label="10-THREAD BENCHMARK CSV",
+                label="DOWNLOAD BENCHMARK CSV",
                 data=f,
                 file_name="eval_ground_truth.csv",
-                mime="text/csv",
-                use_container_width=True
+                mime="text/csv"
             )
 
-st.markdown("<hr style='border: 1px dashed #00FF66; margin: 28px 0;'>", unsafe_allow_html=True)
+st.markdown("<hr style='border: 0; border-top: 1px solid var(--line); margin: 36px 0 28px 0;'>", unsafe_allow_html=True)
 
 # =====================================================================
-# STEP 3: DISCOVERED SAAS OPPORTUNITIES (BULLETPROOF RENDERING)
+# RESULTS FEED (COMMITGEN EDITORIAL PANELS)
 # =====================================================================
 
 opps_df, evidence_df = load_data()
 
-st.markdown(f'<h2 style="font-family: Bangers; font-size: 38px; color: #00FF66; letter-spacing: 1.5px; margin-bottom: 20px;">VALIDATED B2B OPPORTUNITIES ({len(opps_df)} DISCOVERED)</h2>', unsafe_allow_html=True)
+st.markdown(f"""
+<div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 20px;">
+  <h2 style="font-family: var(--display); font-size: 1.8rem; font-weight: 700; margin: 0; color: var(--ink);">
+    Validated Market Opportunities
+  </h2>
+  <span style="font-family: var(--mono); font-size: 0.85rem; color: var(--muted);">
+    {len(opps_df)} opportunities screened by Laya System 1
+  </span>
+</div>
+""", unsafe_allow_html=True)
 
 if not opps_df.empty:
     for idx, row in opps_df.iterrows():
         score = row['commercial_relevance']
-        score_badge = f"SCORE: {score}/10 HIGH CONVICTION" if score >= 6 else f"SCORE: {score}/10 VALIDATED WEDGE"
-        badge_style = "badge-green" if score >= 6 else "badge-yellow"
-
-        # Safe alternatives string
+        score_tag = f'<span class="tag tag-signal">SCORE: {score}/10 HIGH CONVICTION</span>' if score >= 6 else f'<span class="tag tag-amber">SCORE: {score}/10 VALIDATED WEDGE</span>'
+        
+        # Displaced alternatives
         alts = []
         try:
             alts = json.loads(row['existing_alternatives']) if isinstance(row['existing_alternatives'], str) else row['existing_alternatives']
@@ -399,38 +570,39 @@ if not opps_df.empty:
             alts = [str(row['existing_alternatives'])]
         alts_str = ", ".join(alts) if alts else "Excel / Spreadsheets"
 
-        # Match evidence for speech bubble
+        # Match proof conversation
         matched_ev = None
         if not evidence_df.empty:
             matched_ev = evidence_df.iloc[idx % len(evidence_df)]
 
         rant_text = ""
         reddit_link = "https://reddit.com/r/smallbusiness"
-        reddit_author = "smallbiz_user"
+        reddit_author = "reddit_user"
         if matched_ev is not None:
             raw_t = matched_ev['text'].replace('\n', ' ').strip()
-            rant_text = (raw_t[:300] + "...") if len(raw_t) > 300 else raw_t
+            rant_text = (raw_t[:320] + "...") if len(raw_t) > 320 else raw_t
             reddit_link = matched_ev['url']
             reddit_author = matched_ev['author']
 
-        # Build clean HTML string with zero indentation to prevent code-block parser bug
         card_html = (
-            f'<div class="comic-card">'
-            f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">'
-            f'<div>'
-            f'<span class="comic-badge {badge_style}">{score_badge}</span>'
-            f'<span class="comic-badge badge-white">BUYER: {row["target_customer"]}</span>'
+            f'<div class="opp-panel">'
+            f'<div class="opp-meta">'
+            f'<div>{score_tag} <span class="tag tag-cyan" style="margin-left: 6px;">BUYER: {row["target_customer"]}</span></div>'
+            f'<span style="font-family: var(--mono); font-size: 0.8rem; color: var(--muted);">#OPP-{idx+1:02d}</span>'
             f'</div>'
-            f'<div style="font-family: Bangers; font-size: 22px; color: #00FF66;">OPPORTUNITY #{idx+1}</div>'
+            f'<div class="opp-title">{row["concept"]}</div>'
+            f'<div class="opp-problem"><strong>Root Friction:</strong> {row["canonical_problem"]}</div>'
+            f'<div class="opp-alts"><strong>Displacing:</strong> {alts_str}</div>'
+            f'<div class="terminal-quote">'
+            f'<div class="terminal-label">verbatim customer quote (r/smallbusiness)</div>'
+            f'"{rant_text}"'
             f'</div>'
-            f'<div style="font-family: Space Grotesk, sans-serif; font-size: 22px; font-weight: 900; color: #FFFFFF; margin: 10px 0;">{row["concept"]}</div>'
-            f'<div style="color: #CBD5E1; font-size: 15px; margin: 10px 0; line-height: 1.6;"><strong style="color: #00FF66;">THE ROOT PROBLEM:</strong> {row["canonical_problem"]}</div>'
-            f'<div style="margin: 12px 0; font-size: 14.5px; color: #94A3B8;"><strong style="color: #FFE600;">DISPLACING WORKAROUNDS:</strong> <span style="background: #000000; border: 1.5px solid #00FF66; padding: 2px 8px; border-radius: 4px; color: #FFFFFF;">{alts_str}</span></div>'
-            f'<div class="speech-bubble"><div class="speech-label">REAL REDDIT RANT:</div>"{rant_text}"</div>'
-            f'<div style="margin-top: 14px;"><a href="{reddit_link}" target="_blank" class="reddit-btn">VERIFY SOURCE ON REDDIT (u/{reddit_author}) -></a></div>'
+            f'<div style="margin-top: 14px;">'
+            f'<a href="{reddit_link}" target="_blank" class="source-btn">verify source on reddit (u/{reddit_author}) -></a>'
+            f'</div>'
             f'</div>'
         )
 
         st.markdown(card_html, unsafe_allow_html=True)
 else:
-    st.info("No opportunities generated yet. Hit 'MINE PAIN POINTS' above.")
+    st.info("No opportunities generated yet. Run an intelligence scan to populate opportunities.")
