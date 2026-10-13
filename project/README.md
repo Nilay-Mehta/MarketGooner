@@ -17,13 +17,19 @@
 
 ---
 
-## ⚡ How to Run (1-Click or CLI)
+## ⚡ How to Run (Web Dashboard, 1-Click Bat, or CLI)
 
-### 🖱️ Option A: The 1-Click Desktop Launcher (Easiest)
+### 🌟 Option A: Interactive Web Dashboard (Best for Presentations & Demos)
+Double-click **`RUN_DASHBOARD.bat`** (or run `streamlit run app.py`).
+* Opens an executive tech web dashboard in your browser (`http://localhost:8501`).
+* Features: Visual Funnel Chart, Friction Category Donut, Evidence Provenance Inspector, Ground Truth Benchmark Tab, and 1-Click Word Doc download!
+* Includes a **Safe Presentation Demo Mode** that runs in seconds with zero risk of college Wi-Fi or API failure.
+
+### 🖱️ Option B: The 1-Click Desktop Launcher
 Simply double-click **`RUN_PIPELINE.bat`** in this directory. 
 * It automatically scrapes Reddit, extracts pain points, clusters them, runs Laya's decision gate, and automatically pops open your finalized **Master Word Report** when finished!
 
-### 💻 Option B: The 1-Line CLI Command
+### 💻 Option C: The 1-Line CLI Command
 ```bash
 python main.py run-all --subreddit smallbusiness --query "software" --limit 25
 ```
