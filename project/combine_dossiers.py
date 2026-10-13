@@ -77,12 +77,12 @@ def compile_market_intelligence_report(input_dir: str = "delivery_pack", output_
     with open(out_md_path, "w", encoding="utf-8") as f:
         f.write("\n".join(master_content))
         
-    print(f"✅ Master Markdown written to: {out_md_path}")
+    print(f"[SUCCESS] Master Markdown written to: {out_md_path}")
     
     # Convert to single master Word document
     out_docx_path = out_md_path.with_suffix(".docx")
     convert_md_to_docx(str(out_md_path), str(out_docx_path))
-    print(f"✅ Master Word Document written to: {out_docx_path}")
+    print(f"[SUCCESS] Master Word Document written to: {out_docx_path}")
     
     return str(out_md_path), str(out_docx_path)
 

@@ -56,7 +56,7 @@ def add_callout_box(doc, text, title="KEY TAKEAWAY"):
     p = cell.paragraphs[0]
     p.paragraph_format.space_before = Pt(0)
     p.paragraph_format.space_after = Pt(2)
-    run_title = p.add_run(f"📌 {title.upper()}\n")
+    run_title = p.add_run(f"[{title.upper()}]\n")
     run_title.font.name = "Segoe UI"
     run_title.font.size = Pt(9.5)
     run_title.font.bold = True
@@ -319,7 +319,7 @@ def convert_md_to_docx(md_path: str, docx_path: str = None) -> str:
         flush_table()
         
     doc.save(str(docx_path))
-    print(f"✅ Successfully converted: {md_path} -> {docx_path}")
+    print(f"[SUCCESS] Converted: {md_path} -> {docx_path}")
     return str(docx_path)
 
 if __name__ == "__main__":

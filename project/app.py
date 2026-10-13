@@ -4,7 +4,6 @@ import pandas as pd
 import json
 import os
 import time
-import textwrap
 
 # Internal pipeline imports
 from src.orchestration.router.model_router import ModelRouter
@@ -17,30 +16,28 @@ from src.diffusion.dossier.vault_exporter import DiffusionEngine
 from combine_dossiers import compile_market_intelligence_report
 
 # =====================================================================
-# PAGE SETUP & NEON GREEN COMIC THEME
+# PAGE SETUP & NEON GREEN COMIC THEME (NO EMOJIS)
 # =====================================================================
 
 st.set_page_config(
     page_title="MARKET GOONER // GAP MINER",
-    page_icon="⚡",
+    page_icon=None,
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# PURE NEON GREEN & INK BLACK COMIC BOOK CSS
+# 100% NEON GREEN + INK BLACK COMIC BOOK CSS (ZERO EMOJIS)
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Bangers&family=Space+Grotesk:wght@600;700;900&display=swap');
 
-    /* Global Color System: 100% Neon Green + Comic Ink Black */
+    /* Color Palette */
     :root {
         --neon-green: #00FF66;
-        --neon-bright: #10FF50;
         --neon-glow: rgba(0, 255, 102, 0.45);
         --comic-yellow: #FFE600;
         --pure-black: #000000;
-        --dark-surface: #0E0F12;
-        --card-bg: #14161D;
+        --card-bg: #111317;
     }
 
     body, .stApp {
@@ -52,7 +49,7 @@ st.markdown("""
     /* Headings */
     .comic-title {
         font-family: 'Bangers', cursive !important;
-        font-size: 58px !important;
+        font-size: 60px !important;
         color: #00FF66 !important;
         letter-spacing: 2.5px !important;
         text-transform: uppercase !important;
@@ -73,7 +70,7 @@ st.markdown("""
 
     /* Comic Box Cards */
     .comic-card {
-        background: #12141A !important;
+        background: #111317 !important;
         border: 3.5px solid #00FF66 !important;
         border-radius: 12px !important;
         box-shadow: 7px 7px 0px #000000, 7px 7px 0px 2px #00FF66 !important;
@@ -105,9 +102,9 @@ st.markdown("""
     .badge-yellow { background-color: #FFE600; color: #000000; }
     .badge-white { background-color: #FFFFFF; color: #000000; }
 
-    /* Speech Bubble for Real Reddit Rants */
+    /* Speech Bubble for Real Reddit Quotes */
     .speech-bubble {
-        background: #1A1D24;
+        background: #181A22;
         border: 2.5px solid #00FF66;
         border-radius: 8px;
         padding: 14px 18px;
@@ -128,7 +125,7 @@ st.markdown("""
         letter-spacing: 1px;
     }
 
-    /* ALL BUTTONS: NEON GREEN COMIC POP (Forcing High Specificity) */
+    /* ALL BUTTONS: NEON GREEN COMIC POP */
     .stButton > button,
     .stDownloadButton > button,
     button[kind="primary"],
@@ -155,15 +152,7 @@ st.markdown("""
         border-color: #000000 !important;
     }
 
-    /* Secondary Download Buttons Style */
-    .download-yellow > div > button {
-        background-color: #FFE600 !important;
-    }
-    .download-yellow > div > button:hover {
-        background-color: #00FF66 !important;
-    }
-
-    /* Source Links */
+    /* Reddit Source Verification Button */
     a.reddit-btn {
         display: inline-block;
         background-color: #000000 !important;
@@ -229,13 +218,13 @@ def load_data():
 
 col_h1, col_h2 = st.columns([2.5, 1.0])
 with col_h1:
-    st.markdown('<h1 class="comic-title">⚡ MARKET GOONER // GAP MINER</h1>', unsafe_allow_html=True)
-    st.markdown('<p class="comic-sub">TURNING REAL REDDIT COMPLAINTS INTO VALIDATED B2B SAAS CASH</p>', unsafe_allow_html=True)
+    st.markdown('<h1 class="comic-title">MARKET GOONER // GAP MINER</h1>', unsafe_allow_html=True)
+    st.markdown('<p class="comic-sub">TURNING REAL REDDIT COMPLAINTS INTO VALIDATED B2B SAAS OPPORTUNITIES</p>', unsafe_allow_html=True)
 
 with col_h2:
     st.markdown("""
     <div style="text-align: right; margin-top: 10px;">
-        <span class="comic-badge badge-green">⚡ LAYA SYSTEM 1 (CPU)</span>
+        <span class="comic-badge badge-green">LAYA SYSTEM 1 (CPU)</span>
         <span class="comic-badge badge-yellow">ZERO API COST</span>
     </div>
     """, unsafe_allow_html=True)
@@ -247,19 +236,19 @@ st.markdown("<hr style='border: 2px solid #00FF66; margin: 16px 0 24px 0;'>", un
 # =====================================================================
 
 st.markdown('<div class="comic-card">', unsafe_allow_html=True)
-st.markdown('<h3 style="font-family: Bangers; font-size: 28px; color: #00FF66; margin: 0 0 12px 0;">🚀 STEP 1: LAUNCH INTELLIGENCE SCAN</h3>', unsafe_allow_html=True)
+st.markdown('<h3 style="font-family: Bangers; font-size: 28px; color: #00FF66; margin: 0 0 12px 0;">[STEP 1] CONFIGURE AND LAUNCH</h3>', unsafe_allow_html=True)
 
 c_sub, c_query, c_mode, c_run = st.columns([1.5, 1.2, 1.2, 1.4])
 
 with c_sub:
-    subreddit = st.text_input("🎯 Target Subreddit:", value="smallbusiness")
+    subreddit = st.text_input("Target Subreddit:", value="smallbusiness")
 with c_query:
-    query = st.text_input("🔍 Problem Topic:", value="software")
+    query = st.text_input("Problem Topic:", value="software")
 with c_mode:
-    mode = st.selectbox("⚡ Mode:", ["⚡ Safe Demo Mode (Instant / Offline)", "🌐 Live Reddit Scrape"])
+    mode = st.selectbox("Mode:", ["Safe Demo Mode (Instant / Offline)", "Live Reddit Scrape"])
 with c_run:
     st.markdown("<div style='height: 28px;'></div>", unsafe_allow_html=True)
-    run_btn = st.button("💥 MINE PAIN POINTS", use_container_width=True)
+    run_btn = st.button("MINE PAIN POINTS", use_container_width=True)
 
 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -275,10 +264,10 @@ if run_btn:
         router = ModelRouter()
         db = StorageManager()
 
-        status_text.markdown("### ⛏️ [1/4] Mining Customer Conversations...")
+        status_text.markdown("### [1/4] Mining Customer Conversations...")
         progress_bar.progress(25)
         
-        if mode == "⚡ Safe Demo Mode (Instant / Offline)" and os.path.exists("eval_ground_truth.csv"):
+        if mode == "Safe Demo Mode (Instant / Offline)" and os.path.exists("eval_ground_truth.csv"):
             import csv
             with open("eval_ground_truth.csv", "r", encoding="utf-8") as f:
                 reader = csv.DictReader(f)
@@ -304,7 +293,7 @@ if run_btn:
             for ev in scraped:
                 db.save_evidence(ev)
 
-        status_text.markdown("### 🧠 [2/4] Fast LLM Extracting Pain Points & Clustering...")
+        status_text.markdown("### [2/4] Fast LLM Extracting Pain Points and Clustering...")
         progress_bar.progress(50)
         extractor = PainExtractor(router=router, storage=db)
         pains = extractor.process_evidence(scraped)
@@ -312,7 +301,7 @@ if run_btn:
         clustering = ClusteringEngine(router=router, storage=db)
         clusters = clustering.build_clusters(pains)
 
-        status_text.markdown("### 🛡️ [3/4] Running ConvAI Laya Local System 1 Decision Gate...")
+        status_text.markdown("### [3/4] Running ConvAI Laya Local System 1 Decision Gate...")
         progress_bar.progress(75)
         opp_engine = OpportunityEngine(router=router, storage=db)
         opportunities = []
@@ -321,7 +310,7 @@ if run_btn:
             if op:
                 opportunities.append(op)
 
-        status_text.markdown("### 📄 [4/4] Generating Word & Markdown Reports...")
+        status_text.markdown("### [4/4] Generating Word and Markdown Reports...")
         progress_bar.progress(90)
         diffusion = DiffusionEngine(router=router)
         for op in opportunities:
@@ -330,7 +319,7 @@ if run_btn:
         compile_market_intelligence_report(input_dir="delivery_pack", output_md="Market_Intelligence_Report.md")
 
         progress_bar.progress(100)
-        status_text.success("🎉 DONE! Scan Finished. All Opportunities & Master Report Ready Below.")
+        status_text.success("SUCCESS: Scan Finished. All Opportunities and Master Report Ready Below.")
         time.sleep(1)
         st.rerun()
 
@@ -341,7 +330,7 @@ if run_btn:
 # STEP 2: DOWNLOAD DELIVERABLES (PROMINENT NEON BUTTONS)
 # =====================================================================
 
-st.markdown('<h3 style="font-family: Bangers; font-size: 28px; color: #FFE600; margin-top: 10px;">📥 STEP 2: DOWNLOAD THE REPORTS</h3>', unsafe_allow_html=True)
+st.markdown('<h3 style="font-family: Bangers; font-size: 28px; color: #FFE600; margin-top: 10px;">[STEP 2] DOWNLOAD THE REPORTS</h3>', unsafe_allow_html=True)
 
 col_d1, col_d2, col_d3 = st.columns([1.5, 1.5, 1.0])
 
@@ -353,7 +342,7 @@ with col_d1:
     if os.path.exists(docx_path):
         with open(docx_path, "rb") as f:
             st.download_button(
-                label="📥 DOWNLOAD WORD REPORT (.DOCX)",
+                label="DOWNLOAD WORD REPORT (.DOCX)",
                 data=f,
                 file_name="Market_Intelligence_Report.docx",
                 mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
@@ -366,7 +355,7 @@ with col_d2:
     if os.path.exists(md_path):
         with open(md_path, "rb") as f:
             st.download_button(
-                label="📄 DOWNLOAD RAW MARKDOWN (.MD)",
+                label="DOWNLOAD RAW MARKDOWN (.MD)",
                 data=f,
                 file_name="Market_Intelligence_Report.md",
                 mime="text/markdown",
@@ -379,7 +368,7 @@ with col_d3:
     if os.path.exists(csv_path):
         with open(csv_path, "rb") as f:
             st.download_button(
-                label="📊 10-THREAD BENCHMARK CSV",
+                label="10-THREAD BENCHMARK CSV",
                 data=f,
                 file_name="eval_ground_truth.csv",
                 mime="text/csv",
@@ -394,12 +383,12 @@ st.markdown("<hr style='border: 1px dashed #00FF66; margin: 28px 0;'>", unsafe_a
 
 opps_df, evidence_df = load_data()
 
-st.markdown(f'<h2 style="font-family: Bangers; font-size: 38px; color: #00FF66; letter-spacing: 1.5px; margin-bottom: 20px;">🏆 VALIDATED B2B OPPORTUNITIES ({len(opps_df)} DISCOVERED)</h2>', unsafe_allow_html=True)
+st.markdown(f'<h2 style="font-family: Bangers; font-size: 38px; color: #00FF66; letter-spacing: 1.5px; margin-bottom: 20px;">VALIDATED B2B OPPORTUNITIES ({len(opps_df)} DISCOVERED)</h2>', unsafe_allow_html=True)
 
 if not opps_df.empty:
     for idx, row in opps_df.iterrows():
         score = row['commercial_relevance']
-        score_badge = f"🔥 {score}/10 HIGH CONVICTION" if score >= 6 else f"⭐ {score}/10 VALIDATED WEDGE"
+        score_badge = f"SCORE: {score}/10 HIGH CONVICTION" if score >= 6 else f"SCORE: {score}/10 VALIDATED WEDGE"
         badge_style = "badge-green" if score >= 6 else "badge-yellow"
 
         # Safe alternatives string
@@ -424,7 +413,7 @@ if not opps_df.empty:
             reddit_link = matched_ev['url']
             reddit_author = matched_ev['author']
 
-        # Bulid HTML string without ANY indentation to prevent markdown pre/code block parser bug!
+        # Build clean HTML string with zero indentation to prevent code-block parser bug
         card_html = (
             f'<div class="comic-card">'
             f'<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">'
@@ -437,11 +426,11 @@ if not opps_df.empty:
             f'<div style="font-family: Space Grotesk, sans-serif; font-size: 22px; font-weight: 900; color: #FFFFFF; margin: 10px 0;">{row["concept"]}</div>'
             f'<div style="color: #CBD5E1; font-size: 15px; margin: 10px 0; line-height: 1.6;"><strong style="color: #00FF66;">THE ROOT PROBLEM:</strong> {row["canonical_problem"]}</div>'
             f'<div style="margin: 12px 0; font-size: 14.5px; color: #94A3B8;"><strong style="color: #FFE600;">DISPLACING WORKAROUNDS:</strong> <span style="background: #000000; border: 1.5px solid #00FF66; padding: 2px 8px; border-radius: 4px; color: #FFFFFF;">{alts_str}</span></div>'
-            f'<div class="speech-bubble"><div class="speech-label">💬 REAL REDDIT RANT:</div>"{rant_text}"</div>'
-            f'<div style="margin-top: 14px;"><a href="{reddit_link}" target="_blank" class="reddit-btn">🔗 VERIFY SOURCE ON REDDIT (u/{reddit_author}) ➔</a></div>'
+            f'<div class="speech-bubble"><div class="speech-label">REAL REDDIT RANT:</div>"{rant_text}"</div>'
+            f'<div style="margin-top: 14px;"><a href="{reddit_link}" target="_blank" class="reddit-btn">VERIFY SOURCE ON REDDIT (u/{reddit_author}) -></a></div>'
             f'</div>'
         )
 
         st.markdown(card_html, unsafe_allow_html=True)
 else:
-    st.info("No opportunities generated yet. Hit 'MINE PAIN POINTS' above!")
+    st.info("No opportunities generated yet. Hit 'MINE PAIN POINTS' above.")
