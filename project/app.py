@@ -30,20 +30,21 @@ st.set_page_config(
 # Exact design tokens and grid layout from commitgen-ten.vercel.app
 st.markdown("""
 <style>
-    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
     :root {
       --paper: #f6f3ea;
       --ink: #171714;
-      --muted: #69645b;
+      --muted: #48443b;
       --line: #d7d0c0;
       --panel: #fffdf7;
       --charcoal: #24241f;
+      --neon: #00ff66;
+      --neon-dark: #00cc52;
       --oxide: #c84f31;
-      --signal: #38b46b;
+      --signal: #00ff66;
       --cyan: #2a9db4;
       --amber: #d9a33a;
-      --shadow: 0 18px 60px rgba(23, 23, 20, 0.12);
       --mono: "IBM Plex Mono", "Courier New", monospace;
       --display: "Space Grotesk", sans-serif;
       --body: "Space Grotesk", sans-serif;
@@ -51,9 +52,10 @@ st.markdown("""
 
     * {
       box-sizing: border-box;
+      font-family: var(--display) !important;
     }
 
-    /* Streamlit Background Override to match commitgen paper grid */
+    /* Streamlit Background Override */
     html, body, .stApp {
       background:
         linear-gradient(90deg, rgba(23, 23, 20, 0.035) 1px, transparent 1px),
@@ -61,7 +63,27 @@ st.markdown("""
         var(--paper) !important;
       background-size: 44px 44px !important;
       color: var(--ink) !important;
-      font-family: var(--body) !important;
+      font-family: var(--display) !important;
+    }
+
+    /* Consistent typography for general Streamlit containers */
+    p, span, div, h1, h2, h3, h4 {
+      font-family: var(--display) !important;
+    }
+
+    div[data-testid="stMarkdownContainer"] p {
+      color: var(--ink) !important;
+      font-family: var(--display) !important;
+    }
+
+    /* Monospace elements */
+    code, pre, kbd, input, textarea, select,
+    div[data-baseweb="select"] *,
+    div[data-baseweb="input"] *,
+    .tag, .opp-id, .opp-alts, .terminal-quote, .terminal-label,
+    .toolbar-title, .eyebrow, a.source-btn,
+    label, label p, label span, div[data-testid="stWidgetLabel"] p {
+      font-family: var(--mono) !important;
     }
 
     /* Topbar */
@@ -71,19 +93,19 @@ st.markdown("""
       justify-content: space-between;
       gap: 20px;
       padding: 16px 24px;
-      border: 1px solid var(--line);
+      border: 1.5px solid var(--ink);
       border-radius: 8px;
-      background: rgba(255, 253, 247, 0.95);
+      background: rgba(255, 253, 247, 0.96);
       backdrop-filter: blur(16px);
       margin-bottom: 24px;
-      box-shadow: 0 4px 12px rgba(23, 23, 20, 0.04);
+      box-shadow: 4px 4px 0 var(--neon);
     }
 
     .brand {
       display: flex;
       align-items: center;
       gap: 12px;
-      font-family: var(--display);
+      font-family: var(--display) !important;
       font-weight: 700;
       font-size: 1.15rem;
       color: var(--ink);
@@ -97,22 +119,22 @@ st.markdown("""
       background: var(--ink);
       color: var(--paper);
       border-radius: 7px;
-      font-family: var(--mono);
+      font-family: var(--mono) !important;
       font-size: 0.9rem;
       font-weight: 700;
-      box-shadow: 4px 4px 0 var(--signal);
+      box-shadow: 3px 3px 0 var(--neon);
     }
 
     .eyebrow {
       display: inline-block;
-      border: 1px solid var(--ink);
+      border: 1.5px solid var(--ink);
       border-radius: 999px;
-      padding: 5px 12px;
-      font-family: var(--mono);
+      padding: 5px 14px;
+      font-family: var(--mono) !important;
       font-size: 0.76rem;
       font-weight: 600;
       background: var(--panel);
-      box-shadow: 3px 3px 0 var(--amber);
+      box-shadow: 3px 3px 0 var(--neon);
       color: var(--ink);
       text-transform: uppercase;
       letter-spacing: 0.5px;
@@ -120,7 +142,7 @@ st.markdown("""
 
     /* Hero Typography */
     .hero-title {
-      font-family: var(--display);
+      font-family: var(--display) !important;
       font-size: clamp(2.4rem, 5vw, 4.4rem);
       line-height: 0.95;
       font-weight: 700;
@@ -135,14 +157,15 @@ st.markdown("""
       font-size: 1.1rem;
       line-height: 1.55;
       margin-bottom: 24px;
+      font-weight: 500;
     }
 
-    /* Terminal Workspace Box (Commitgen style) */
+    /* Terminal Workspace Box */
     .workspace-box {
-      border: 1px solid var(--ink);
+      border: 1.5px solid var(--ink);
       border-radius: 8px;
       background: var(--panel);
-      box-shadow: var(--shadow);
+      box-shadow: 4px 4px 0 var(--neon);
       margin-bottom: 28px;
       overflow: hidden;
     }
@@ -153,7 +176,7 @@ st.markdown("""
       justify-content: space-between;
       gap: 12px;
       padding: 12px 18px;
-      border-bottom: 1px solid var(--ink);
+      border-bottom: 1.5px solid var(--ink);
       background: var(--charcoal);
       color: var(--paper);
     }
@@ -171,12 +194,12 @@ st.markdown("""
     }
     .dot-red { background: var(--oxide); }
     .dot-amber { background: var(--amber); }
-    .dot-green { background: var(--signal); }
+    .dot-green { background: var(--neon); }
 
     .toolbar-title {
-      font-family: var(--mono);
+      font-family: var(--mono) !important;
       font-size: 0.82rem;
-      color: #c9c2b2;
+      color: #f6f3ea;
       letter-spacing: 0.5px;
     }
 
@@ -190,7 +213,8 @@ st.markdown("""
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
       gap: 20px;
-      margin-bottom: 28px;
+      margin-bottom: 32px;
+      align-items: stretch;
     }
 
     @media (max-width: 1120px) {
@@ -206,21 +230,21 @@ st.markdown("""
     }
 
     .opp-panel {
-      border: 1px solid var(--ink);
+      border: 1.5px solid var(--ink);
       border-radius: 8px;
       padding: 18px 20px;
       background: var(--panel);
-      box-shadow: 4px 4px 0 var(--ink);
+      box-shadow: 4px 4px 0 var(--neon);
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      min-height: 490px;
+      min-height: 480px;
       transition: transform 140ms ease, box-shadow 140ms ease;
     }
 
     .opp-panel:hover {
       transform: translate(-2px, -2px);
-      box-shadow: 6px 6px 0 var(--oxide);
+      box-shadow: 6px 6px 0 var(--neon);
     }
 
     .opp-meta {
@@ -228,14 +252,22 @@ st.markdown("""
       align-items: center;
       justify-content: space-between;
       gap: 8px;
-      margin-bottom: 10px;
+      margin-bottom: 8px;
+    }
+
+    .opp-id {
+      font-family: var(--mono) !important;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 0.5px;
     }
 
     .tag {
-      font-family: var(--mono);
+      font-family: var(--mono) !important;
       font-size: 0.72rem;
       font-weight: 600;
-      padding: 3px 7px;
+      padding: 3px 8px;
       border-radius: 4px;
       border: 1px solid var(--ink);
       text-transform: uppercase;
@@ -243,22 +275,15 @@ st.markdown("""
       overflow: hidden;
       text-overflow: ellipsis;
       max-width: 100%;
+      display: inline-block;
     }
-    .tag-signal { background: #e3f7eb; color: #176435; border-color: var(--signal); }
+    .tag-signal { background: #e3f7eb; color: #0b592b; border-color: var(--neon); }
     .tag-amber { background: #fdf5e2; color: #875c0d; border-color: var(--amber); }
     .tag-cyan { background: #e6f6f9; color: #125e6e; border-color: var(--cyan); }
     .tag-oxide { background: #faece8; color: #a6361a; border-color: var(--oxide); }
 
-    .opp-id {
-      font-family: var(--mono);
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--muted);
-      letter-spacing: 0.5px;
-    }
-
     .opp-title {
-      font-family: var(--display);
+      font-family: var(--display) !important;
       font-size: 1.15rem;
       font-weight: 700;
       color: var(--ink);
@@ -272,24 +297,24 @@ st.markdown("""
     }
 
     .opp-problem {
-      color: var(--muted);
+      color: #2b2a26;
       font-size: 0.88rem;
       line-height: 1.45;
       margin: 6px 0 8px 0;
       display: -webkit-box;
-      -webkit-line-clamp: 2;
+      -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
       overflow: hidden;
-      min-height: 2.9em;
+      min-height: 3.8em;
     }
 
     .opp-alts {
-      font-family: var(--mono);
+      font-family: var(--mono) !important;
       font-size: 0.78rem;
       color: var(--charcoal);
       margin: 6px 0 10px 0;
       background: #f4eee1;
-      padding: 5px 10px;
+      padding: 6px 10px;
       border-radius: 4px;
       width: 100%;
       border: 1px solid var(--line);
@@ -300,16 +325,16 @@ st.markdown("""
 
     /* Terminal Quote Box */
     .terminal-quote {
-      border: 1px solid #3c3a32;
+      border: 1.5px solid #3c3a32;
       border-radius: 6px;
       background: #171714;
       color: #f6f3ea;
       padding: 10px 12px;
-      font-family: var(--mono);
+      font-family: var(--mono) !important;
       font-size: 0.78rem;
       line-height: 1.45;
       margin-top: 8px;
-      min-height: 82px;
+      min-height: 80px;
       display: -webkit-box;
       -webkit-line-clamp: 3;
       -webkit-box-orient: vertical;
@@ -317,82 +342,184 @@ st.markdown("""
     }
 
     .terminal-label {
-      color: var(--signal);
-      font-size: 0.68rem;
+      color: var(--neon) !important;
+      font-family: var(--mono) !important;
+      font-size: 0.70rem;
       font-weight: 600;
       letter-spacing: 0.5px;
       margin-bottom: 4px;
       text-transform: uppercase;
     }
 
-    /* Buttons Override (Commitgen Button Style) */
+    /* Buttons Override (Commitgen Button Style with Neon Green Shadow) */
     .stButton > button,
     .stDownloadButton > button {
-      border: 1px solid var(--ink) !important;
+      border: 1.5px solid var(--ink) !important;
       border-radius: 8px !important;
       padding: 12px 18px !important;
       background: var(--ink) !important;
       color: var(--paper) !important;
       text-decoration: none !important;
+      box-shadow: 4px 4px 0 var(--neon) !important;
+      transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease !important;
+      width: 100% !important;
+      cursor: pointer !important;
+    }
+
+    .stButton > button *,
+    .stButton > button p,
+    .stButton > button div,
+    .stButton > button span,
+    .stDownloadButton > button *,
+    .stDownloadButton > button p,
+    .stDownloadButton > button div,
+    .stDownloadButton > button span {
       font-family: var(--display) !important;
       font-weight: 700 !important;
-      font-size: 0.95rem !important;
-      cursor: pointer !important;
-      box-shadow: 4px 4px 0 var(--oxide) !important;
-      transition: transform 140ms ease, box-shadow 140ms ease !important;
-      width: 100% !important;
+      font-size: 0.92rem !important;
+      color: var(--paper) !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      line-height: 1.25 !important;
     }
 
     .stButton > button:hover,
     .stDownloadButton > button:hover {
       transform: translate(-2px, -2px) !important;
-      box-shadow: 6px 6px 0 var(--oxide) !important;
-      background: var(--charcoal) !important;
-      color: var(--paper) !important;
+      box-shadow: 6px 6px 0 var(--neon) !important;
+      background: #000000 !important;
+      border-color: var(--neon) !important;
+    }
+
+    .stButton > button:hover *,
+    .stButton > button:hover p,
+    .stButton > button:hover span,
+    .stDownloadButton > button:hover *,
+    .stDownloadButton > button:hover p,
+    .stDownloadButton > button:hover span {
+      color: var(--neon) !important;
     }
 
     /* Source Links */
     a.source-btn {
       display: inline-block;
-      margin-top: 12px;
-      border: 1px solid var(--ink);
+      margin-top: 10px;
+      border: 1.5px solid var(--ink);
       border-radius: 6px;
       background: var(--paper);
-      color: var(--ink);
+      color: var(--ink) !important;
       padding: 7px 12px;
-      font-family: var(--mono);
+      font-family: var(--mono) !important;
       font-size: 0.78rem;
       font-weight: 600;
       text-decoration: none;
-      box-shadow: 3px 3px 0 var(--cyan);
+      box-shadow: 3px 3px 0 var(--neon);
       transition: all 120ms ease;
     }
     a.source-btn:hover {
       transform: translate(-1px, -1px);
-      box-shadow: 4px 4px 0 var(--cyan);
-      color: var(--ink);
+      box-shadow: 4px 4px 0 var(--neon);
+      background: var(--neon);
+      color: var(--ink) !important;
     }
 
-    /* Streamlit Input fields */
-    div[data-baseweb="input"] {
-      border: 1px solid var(--line) !important;
+    /* Streamlit Input fields & Selectboxes */
+    div[data-baseweb="input"],
+    div[data-baseweb="select"] > div {
+      border: 1.5px solid var(--ink) !important;
       border-radius: 7px !important;
-      background: #fffaf0 !important;
+      background: #fffdf7 !important;
+      box-shadow: 3px 3px 0 var(--neon) !important;
     }
-    div[data-baseweb="input"]:focus-within {
+
+    div[data-baseweb="input"]:focus-within,
+    div[data-baseweb="select"] > div:focus-within {
       border-color: var(--ink) !important;
-      box-shadow: 2px 2px 0 var(--signal) !important;
+      box-shadow: 4px 4px 0 var(--neon) !important;
     }
-    input {
+
+    input,
+    div[data-baseweb="select"] *,
+    div[data-baseweb="select"] span,
+    div[data-baseweb="select"] div {
       color: var(--ink) !important;
       font-family: var(--mono) !important;
       font-size: 0.9rem !important;
+      font-weight: 500 !important;
     }
-    label {
+
+    /* Selectbox Dropdown Menu Popover */
+    ul[data-baseweb="menu"],
+    div[data-baseweb="popover"] ul {
+      background: #fffdf7 !important;
+      border: 1.5px solid var(--ink) !important;
+      border-radius: 6px !important;
+      box-shadow: 4px 4px 0 var(--neon) !important;
+      padding: 6px !important;
+    }
+
+    li[data-baseweb="menu-item"],
+    li[data-baseweb="menu-item"] * {
+      color: var(--ink) !important;
+      font-family: var(--mono) !important;
+      font-size: 0.85rem !important;
+    }
+
+    li[data-baseweb="menu-item"]:hover {
+      background: var(--neon) !important;
+      color: var(--ink) !important;
+    }
+
+    label,
+    label p,
+    label span,
+    div[data-testid="stWidgetLabel"] p {
       font-family: var(--mono) !important;
       font-size: 0.8rem !important;
-      color: var(--muted) !important;
+      font-weight: 700 !important;
+      color: var(--ink) !important;
       text-transform: uppercase !important;
+      letter-spacing: 0.5px !important;
+      margin-bottom: 4px !important;
+    }
+
+    /* Streamlit Alert Boxes */
+    .stAlert, div[data-testid="stAlert"] {
+      border: 1.5px solid var(--ink) !important;
+      border-radius: 8px !important;
+      background: #fffdf7 !important;
+      box-shadow: 4px 4px 0 var(--neon) !important;
+      color: var(--ink) !important;
+      padding: 14px 18px !important;
+    }
+
+    .stAlert p, div[data-testid="stAlert"] p {
+      color: var(--ink) !important;
+      font-family: var(--display) !important;
+      font-weight: 600 !important;
+      font-size: 0.95rem !important;
+    }
+
+    /* Streamlit Progress Bar */
+    .stProgress > div > div > div > div {
+      background-color: var(--neon) !important;
+    }
+    .stProgress > div > div {
+      background-color: #e5ded0 !important;
+      border: 1px solid var(--ink) !important;
+      border-radius: 4px !important;
+    }
+
+    /* Monospace inline code tags */
+    code {
+      font-family: var(--mono) !important;
+      background: #e6dfcf !important;
+      color: var(--ink) !important;
+      border: 1px solid var(--line) !important;
+      padding: 3px 8px !important;
+      border-radius: 4px !important;
+      font-size: 0.88rem !important;
+      font-weight: 600 !important;
     }
 </style>
 """, unsafe_allow_html=True)
