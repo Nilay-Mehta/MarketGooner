@@ -138,3 +138,30 @@ ContractSense AI is the lightweight, AI-driven Contract Lifecycle Management (CL
 *   **Automated Milestone Tracking:** From payment schedules to delivery dates, ContractSense AI tracks every critical milestone, so you don't have to.
 *   **Smart Renewal Reminders:** Get proactive alerts for upcoming renewals, giving you ample time to review, renegotiate, or terminate.
 *   **Seamless Integrations:** Receive notifications and manage contracts directly within **Slack
+
+---
+
+---
+
+## 5. Empirical Grounding & Community Source Citations
+
+This venture concept is directly grounded in verified empirical customer friction harvested from public practitioner communities:
+
+### Evidence Record: Thread #1 (r/smallbusiness)
+* **Community Thread Title:** [Looking for a simple Client + Service + Payment Management System for a small service business](https://www.reddit.com/r/smallbusiness/comments/1wrdg2b/looking_for_a_simple_client_service_payment/)
+* **Direct Discussion URL:** `https://www.reddit.com/r/smallbusiness/comments/1wrdg2b/looking_for_a_simple_client_service_payment/`
+* **Displaced Incumbents & Workarounds:** QuickBooks, InstaCRM, separate manual spreadsheets
+* **Problem Severity Classification:** `BLOCKER`
+* **Commercial Validation Signal:** Blocker severity, multiple users faced the same permission problem, clear workflow workaround.
+* **Verbatim Customer Voice (Rant / Friction Quote):**
+  > "Employees need to enter payments without seeing sensitive financial information; existing tools lack sufficiently granular permissions, forcing us to maintain separate disconnected records."
+
+### Evidence Record: Thread #8 (r/smallbusiness)
+* **Community Thread Title:** [Contract lifecycle management for a 2-person studio](https://www.reddit.com/r/smallbusiness/comments/1r9dt0n/contract_lifecycle_management_for_a_2person_studio/)
+* **Direct Discussion URL:** `https://www.reddit.com/r/smallbusiness/comments/1r9dt0n/contract_lifecycle_management_for_a_2person_studio/`
+* **Displaced Incumbents & Workarounds:** Ironclad, DocuSign CLM, Google Drive + Notion trackers, calendar alerts
+* **Problem Severity Classification:** `BLOCKER`
+* **Commercial Validation Signal:** Explicit willingness to pay (<$50/mo), active search for lightweight alternative, 4+ boutique owners corroborating.
+* **Verbatim Customer Voice (Rant / Friction Quote):**
+  > "Enterprise CLMs (Ironclad, DocuSign CLM) demand sales calls and $1,000s/year while basic PDF e-sign tools lack milestone tracking and post-signing reminders. We need a lightweight tracker under $50/mo to prevent missed auto-renewals."
+

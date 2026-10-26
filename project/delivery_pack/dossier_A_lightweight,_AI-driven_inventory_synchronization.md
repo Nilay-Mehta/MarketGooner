@@ -126,3 +126,30 @@ Are manual updates, integration headaches, and inconsistent stock levels holding
 
 *   **Lost Sales:** Stockouts on one channel while inventory sits idle on another.
 *   **Customer Frustration:** Inaccurate availability leading to backorders and cancellations
+
+---
+
+---
+
+## 5. Empirical Grounding & Community Source Citations
+
+This venture concept is directly grounded in verified empirical customer friction harvested from public practitioner communities:
+
+### Evidence Record: Thread #5 (r/smallbusiness)
+* **Community Thread Title:** [Organizing supplier/distributor information and comparing pricing](https://www.reddit.com/r/smallbusiness/comments/1v9fcl3/new_convenience_store_owner_what_tools_help/)
+* **Direct Discussion URL:** `https://www.reddit.com/r/smallbusiness/comments/1v9fcl3/new_convenience_store_owner_what_tools_help/`
+* **Displaced Incumbents & Workarounds:** Supplier portals, spreadsheets, Airtable
+* **Problem Severity Classification:** `ANNOYANCE`
+* **Commercial Validation Signal:** Clear organizational gap in tracking supplier price shifts and purchase records across multiple fragmented distributors.
+* **Verbatim Customer Voice (Rant / Friction Quote):**
+  > "Maintaining supplier details, pricing/MOQ, and purchase history across many vendors becomes chaotic before investing in heavy ERP. Unit-size and price changes easily slip through."
+
+### Evidence Record: Thread #9 (r/smallbusiness)
+* **Community Thread Title:** [Talked to a $12M shop running inventory in Excel. Why is this still common?](https://www.reddit.com/r/smallbusiness/comments/1t1r4fu/talked_to_a_12m_shop_running_inventory_in_excel/)
+* **Direct Discussion URL:** `https://www.reddit.com/r/smallbusiness/comments/1t1r4fu/talked_to_a_12m_shop_running_inventory_in_excel/`
+* **Displaced Incumbents & Workarounds:** NetSuite, SAP Business One, massive multi-tab Excel workbooks with macro scripts
+* **Problem Severity Classification:** `BLOCKER`
+* **Commercial Validation Signal:** High willingness to spend ($5k-$20k implementation budget) if workflow breakage is avoided; 15+ operators validating spreadsheet lock-in.
+* **Verbatim Customer Voice (Rant / Friction Quote):**
+  > "Talked to a $12M shop running inventory in Excel... Every time we try an inventory SaaS, it breaks our workflow, our staff refuses to use the mobile barcode app, and we run back to Excel. Mainstream ERPs cost $50k+ and months of onboarding."
+

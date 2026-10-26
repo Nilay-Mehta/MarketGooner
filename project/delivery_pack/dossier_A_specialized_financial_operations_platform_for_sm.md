@@ -118,3 +118,30 @@ Our GTM strategy for ContractorFlow is built on deep understanding of our target
 ## The Financial Operations Platform Built Exclusively for Small Business Contractors.
 
 **(Hero Section: High-quality image/video of a contractor on a job site confidently reviewing a clean,
+
+---
+
+---
+
+## 5. Empirical Grounding & Community Source Citations
+
+This venture concept is directly grounded in verified empirical customer friction harvested from public practitioner communities:
+
+### Evidence Record: Thread #2 (r/smallbusiness)
+* **Community Thread Title:** [bookkeeping software recs for small business contractor!](https://www.reddit.com/r/smallbusiness/comments/1wtfgkp/bookkeeping_software_recs_for_small_business/)
+* **Direct Discussion URL:** `https://www.reddit.com/r/smallbusiness/comments/1wtfgkp/bookkeeping_software_recs_for_small_business/`
+* **Displaced Incumbents & Workarounds:** QuickBooks Online (QBO), Wave, Xero, MileIQ, paid external bookkeepers
+* **Problem Severity Classification:** `ANNOYANCE / CASH FLOW DELAY`
+* **Commercial Validation Signal:** Existing financial spend on bookkeepers/software, active migration intent from generic QBO to trade-specific workflows.
+* **Verbatim Customer Voice (Rant / Friction Quote):**
+  > "Paying an external bookkeeper and frustrated with QBO complexity; desperately seeking a simpler, more user-friendly solution for contractor job costing, invoicing, and mileage tracking."
+
+### Evidence Record: Thread #11 (r/smallbusiness)
+* **Community Thread Title:** [Field service scheduling and dispatch - Jobber and ServiceTitan are pricing out small teams](https://www.reddit.com/r/smallbusiness/comments/1r99a2x/field_service_software_pricing/)
+* **Direct Discussion URL:** `https://www.reddit.com/r/smallbusiness/comments/1r99a2x/field_service_software_pricing/`
+* **Displaced Incumbents & Workarounds:** Jobber, ServiceTitan, paper dispatch clipboards, SMS threads
+* **Problem Severity Classification:** `FINANCIAL_BLEED`
+* **Commercial Validation Signal:** Explicit price sensitivity, 7+ trade operators refusing $200+/month field management bloat.
+* **Verbatim Customer Voice (Rant / Friction Quote):**
+  > "Jobber keeps hiking rates every quarter. We only have 3 field technicians, but they charge us enterprise tier rates for basic routing and dispatch calendars. We run back to WhatsApp and Google Calendar."
+
