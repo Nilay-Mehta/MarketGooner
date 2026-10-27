@@ -15,7 +15,7 @@
   </p>
 </div> -->
 
-**MarketGooner** is an autonomous, 100% free-tier B2B market research and gap-mining engine. It is designed to mine customer friction from Reddit, Hacker News, GitHub, and community boards, and synthesize validated Micro-SaaS startup opportunities.
+**MarketTool** is an autonomous, 100% free-tier B2B market research and gap-mining engine. It is designed to mine customer friction from Reddit, Hacker News, GitHub, and community boards, and synthesize validated Micro-SaaS startup opportunities.
 
 This repository contains two main components:
 1. **The Intelligence Engine (`/project`)**: A Python-based CLI pipeline that scans data sources, extracts explicit pain points, clusters them using BERTopic, and synthetically ranks them for WTP (Willingness-to-Pay), Frequency, Feasibility, and search trends.
