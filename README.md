@@ -1,4 +1,4 @@
-<div align="center">
+<!-- <div align="center">
   <img src="assets/logo.png" alt="Logo" width="250" />
   
   <h1>MarketGooner</h1>
@@ -13,7 +13,7 @@
     <img alt="Version" src="https://img.shields.io/badge/version-v1.0.0-blue?style=flat-square" />
     <img alt="License" src="https://img.shields.io/badge/license-MIT-green?style=flat-square" />
   </p>
-</div>
+</div> -->
 
 **MarketGooner** is an autonomous, 100% free-tier B2B market research and gap-mining engine. It is designed to mine customer friction from Reddit, Hacker News, GitHub, and community boards, and synthesize validated Micro-SaaS startup opportunities.
 
